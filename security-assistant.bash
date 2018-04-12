@@ -6,16 +6,20 @@
 # Author: Spas Z. Spasov <spas.z.spasov@gmail.com> 21.06.2017
 # Download command: curl https://pastebin.com/raw/wvV9B1nf | sed -e 's/\r$//' | sudo tee /var/www-security/security-assistant.bash
 
-TIME="$(date +%H:%M:%S)"                                                                     # Get the current time
-DATE="$(date +%Y-%m-%d)"                                                                     # Get the current date
-printf "\n\n***** SECURITY LOG from $TIME on $DATE - security-assistant.bash : $2 : $1\n\n"  # Echo a header for the log file
+TIME="$(date +%H:%M:%S)"                                        			       # Get the current time
+DATE="$(date +%Y-%m-%d)"                                        			       # Get the current date
+printf "\n\n***** SECURITY LOG from $TIME on $DATE - security-assistant.bash : $2 : $1\n\n"    # Echo a header for the log file
 
-echo "security-assistant.bash S1"
-[ -z "${1+x}" ] || [ -z "${2+x}" ] && (echo "Usage: <IP> [ ModSecurity | ModEvasive | Guardian | a2Analyst ] or [ --DROP | --ACCEPT \"log note\" | --ACCEPT-CHAIN \"log note\" ]"; echo; exit 1)
+		#LOG:
+		echo "$IP"
+		echo "security-assistant.bash S1"
+
+[ -z "${1+x}" ] || [ -z "${2+x}" ] && (echo "Usage: <IP> [ ModSecurity | ModEvasive | Guardian | a2Analyst ] or [ --DROP \"log note\" | --DROP-CLEAR \"log note\" | --ACCEPT \"log note\" | --ACCEPT-CHAIN \"log note\" ]"; echo; exit 1)
 [ -x /usr/bin/at ] || (echo "Please, install 'at'"; exit 1)
 
 ## OPTIONS
-echo "security-assistant.bash S2"
+		#LOG:
+		echo "security-assistant.bash S2"
 
 IP="$1"                                                         # IP address - the first argument
 AGENT="$2"                                                      # MODE or AGENT; Automatic MODE, available agents: [ ModSecurity | ModEvasive | Guardian | a2Analyst ]; Or Manual MODE: [ --DROP | --ACCEPT "log note" | --ACCEPT-CHAIN "log note" ]
@@ -26,6 +30,7 @@ HOSTNAME=$(/bin/hostname -f)                                    # Get server's h
 
 WHITE_LIST="$WORK_DIR/iptables-ACCEPT.list"                     # White-list at least your server's IP and localhost IP 127.0.0.1
 BAN_LIST="$WORK_DIR/iptables-DROP.list"
+BAN_CLEAR_LIST="$WORK_DIR/iptables-DROP-CLEAR.list"
 hCACHE="$WORK_DIR/security-assistant.history"                   # Please be careful when manipulate this file manually
 
 APACHE_LOG="/var/log/apache2"                                   # The log directory mentioned in /etc/apache2/envvars
@@ -34,66 +39,121 @@ SECURITY_LOG="$APACHE_LOG/mod_security2"                        # The log direct
 
 EMAIL_BODY="$WORK_DIR/security-assistant.mail"                  # This file will exists until next thread
 EMAIL_FROM="Security Assistant <root@$HOSTNAME>"                # Or just enter <your@email.foo>
-EMAIL_TO="admin@$HOSTNAME, user@$HOSTNAME"                      # Multiple accounts separated by commas: EMAIL_TO="your@email.foo, your@email.bar, your@email.baz"
+#EMAIL_TO="admin@$HOSTNAME, user@$HOSTNAME"                     # Multiple accounts separated by commas: EMAIL_TO="your@email.foo, your@email.bar, your@email.baz"
+EMAIL_TO="szs.wiki.mailer@gmail.com, trivium@$HOSTNAME"         # Multiple accounts separated by commas: EMAIL_TO="your@email.foo, your@email.bar, your@email.baz"
 
 IPTABLES_SAVE="$WORK_DIR/iptables-save.sh"                      # Here is used additional script as iptables save command: https://www.cyberciti.biz/faq/iptables-read-and-block-ips-subnets-from-text-file/
                                                                 # It can be replaced with something as its content: /sbin/iptables-save > /var/www-security/iptables-CURRENT.conf
 
 BAN_TIME="5 minutes"                                            # Time-units can be minutes, hours, days, or weeks; see `man at`; `sudo atq` lists pending jobs; `sudo at -c job_number` shows the job's content;
-LIMIT="5"                                                       # Limit of tolerance of transgressions from certain IP
+LIMIT="3"                                                       # Limit of tolerance of transgressions from certain IP
 
 ## Create Actions
 ## BEGIN:: If the $IP is not in the $WHITE_LIST check current mode: MANUAL add IP to ACCEPT/DROP List; AUTOMATIC detect $AGENT, GOTO action and log $IP in $hCACHE
-echo "security-assistant.bash S3"
+
+		#LOG:
+		echo "security-assistant.bash S3"
 
 if [ ! "$(grep "$IP" "$WHITE_LIST")" == "" ]; then
+
                 echo "The IP address $IP is a member of the Withe List!"; echo;
+
                 exit 1
+
 elif [ "$AGENT" == "--DROP" ]; then             # Add $IP to the DROP (BAN) List, syntax: ./security.bash 192.168.1.222 "--DROP"
-                printf "On $DATE at $TIME the IP $IP was added to the DROP (BAN) List MANUALLY. Unblock command: sudo iptables -D GUARDIAN -s $IP -j DROP\n" | tee -a "$BAN_LIST"
+
                 /sbin/iptables -A GUARDIAN -s $IP -j DROP
                 /sbin/iptables -L GUARDIAN -n --line-numbers
-                /var/www-security/iptables-save.sh
+
+                eval "$IPTABLES_SAVE"           # https://unix.stackexchange.com/a/23116/201297 , https://unix.stackexchange.com/a/296852/201297
+
+		printf "%-46s %-16s %s %-14s %-72s %s\n" "On $DATE at $TIME - This IP or CIDR:" "$IP" "was added to the DROP (BAN) List by" "the Admin." "Unblock command: sudo iptables -D GUARDIAN -s $IP -j DROP" "Notes: $NOTES" | /usr/bin/tee -a "$BAN_LIST"
+
                 exit 1
+
+elif [ "$AGENT" == "--DROP-CLEAR" ]; then       # Add $IP to the DROP (BAN) List, syntax: ./security.bash 192.168.1.222 "--DROP-CLEAR"
+
+                /sbin/iptables -L GUARDIAN -n --line-numbers
+		echo
+
+                printf "%-46s %-16s %s %-14s %s\n" "On $DATE at $TIME - This IP or CIDR:" "$IP" "was cleared from the DROP (BAN) List by" "the Admin." "Notes: $NOTES" | /usr/bin/tee -a "$BAN_CLEAR_LIST"
+
+		sed -i "/$IP/d" $hCACHE
+		sed -i "/$IP/d" $BAN_LIST
+		/sbin/iptables -D GUARDIAN -s $IP -j DROP
+
+                eval "$IPTABLES_SAVE"           # https://unix.stackexchange.com/a/23116/201297 , https://unix.stackexchange.com/a/296852/201297
+
+		echo
+		/sbin/iptables -L GUARDIAN -n --line-numbers
+                echo
+
+                exit 1
+
 elif [ "$AGENT" == "--ACCEPT" ]; then           # Add $IP to the ACCEPT (WHITE) List, syntax: ./security.bash 192.168.1.222 "--ACCEPT" "My home machine."
-                printf "On $DATE at $TIME the IP $IP was added to the ACCEPT (WHITE) List MANUALLY. Notes: $NOTES\n" | tee -a "$WHITE_LIST"
+
+                printf "%-46s %-16s %s %-14s %s\n" "On $DATE at $TIME - This IP or CIDR:" "$IP" "was added to the ACCEPT (WHITE) List by" "the Admin." "Notes: $NOTES" | /usr/bin/tee -a "$WHITE_LIST"
+
                 exit 1
+
 elif [ "$AGENT" == "--ACCEPT-CHAIN" ]; then     # Add $IP to the ACCEPT (WHITE) List, syntax: ./security.bash 192.168.1.222 "--ACCEPT" "My home machine."
-                printf "On $DATE at $TIME the IP $IP was added to the ACCEPT (WHITE) List MANUALLY. Also Iptables rule was created. Notes: $NOTES\n" | tee -a "$WHITE_LIST"
+
                 /sbin/iptables -A GUARDIAN -s $IP -j ACCEPT
                 /sbin/iptables -L GUARDIAN -n --line-numbers
-                /var/www-security/iptables-save.sh
+
+                eval "$IPTABLES_SAVE"                                                                                                  # https://unix.stackexchange.com/a/23116/201297 , https://unix.stackexchange.com/a/296852/201297
+
+                printf "%-46s %-16s %s %-14s %s\n" "On $DATE at $TIME - This IP or CIDR:" "$IP" "was added to the ACCEPT (WHITE) List by" "the Admin." "Notes: $NOTES | Iptables rule has been created!" | /usr/bin/tee -a "$WHITE_LIST"
+
                 exit 1
-elif [ "$AGENT" == "Guardian" ] || [ "$AGENT" == "ModSecurity" ] || [ "$AGENT" == "ModEvasive" ] || [ "$AGENT" == "a2Analyst" ]; then             # If $AGENT has a valid value - do some things and go further
 
-        echo "security-assistant.bash S4"
+elif [ "$AGENT" == "Guardian" ] || [ "$AGENT" == "ModSecurity" ] || [ "$AGENT" == "ModEvasive" ] || [ "$AGENT" == "a2Analyst" ]; then  # If $AGENT has a valid value - do some things and go further
 
-        IP_SINS=$(cat $hCACHE | grep $IP | wc -l)       # Number of the previous transgressions from this $IP # IP_SINS="$(grep -c ${IP} ${hCACHE})" - sometimes works sometime doesn't work
-        IP_SINS=$((IP_SINS+1))                             # Number of the current transgressions from this $IP  # https://askubuntu.com/questions/385528/how-to-increment-a-variable-in-bash
+		#LOG:
+		echo "security-assistant.bash S4"
 
-        echo "security-assistant.bash S5"
+		IP_SINS=$(cat $hCACHE | grep $IP | wc -l)	# Number of the previous transgressions from this $IP # IP_SINS="$(grep -c ${IP} ${hCACHE})" - sometimes works sometime doesn't work
+		IP_SINS=$((IP_SINS+1))				# Number of the current transgressions from this $IP  # https://askubuntu.com/questions/385528/how-to-increment-a-variable-in-bash
 
-        if [ ! "$IP_SINS" -ge "$LIMIT" ]; then
-                /sbin/iptables -I GUARDIAN -s $IP -j DROP                                                               # Add the following firewall rule (block IP); alt.: `/sbin/iptables -I INPUT -p tcp --dport 80 -s %s -j DROP`
-                echo "/sbin/iptables -D GUARDIAN -s $IP -j DROP && $(echo "$IPTABLES_SAVE")" | at now + $BAN_TIME       # Unblock offending IP after $BAN_TIME through the `at` command
-                echo "security-assistant.bash S6"
-        else
-                printf "On $DATE at $TIME the IP $IP was added to the DROP (BAN) List by $AGENT. Unblock command: sudo iptables -D GUARDIAN -s $IP -j DROP\n" | tee -a "$BAN_LIST"
-                /sbin/iptables -A GUARDIAN -s $IP -j DROP                                                               # Add $IP to the Black List, more complicated script:
-                eval "$IPTABLES_SAVE"                                                                                   # https://unix.stackexchange.com/a/23116/201297 , https://unix.stackexchange.com/a/296852/201297
-                echo "security-assistant.bash S7"
-        fi
+	   	#LOG:
+		echo "security-assistant.bash S5"
 
-else    # Else something is not correct
-                echo "Usage: <IP> [ ModSecurity | ModEvasive | Guardian | a2Analyst ] or [ --DROP | --ACCEPT \"log note\" | --ACCEPT-CHAIN \"log note\" ]"; echo;
+	if [ ! "$IP_SINS" -ge "$LIMIT" ]; then
+
+      	        /sbin/iptables -I GUARDIAN -s $IP -j DROP       # Add the following firewall rule (block IP); alt.: `/sbin/iptables -I INPUT -p tcp --dport 80 -s %s -j DROP`
+								# Unblock offending IP after $BAN_TIME through the `at` command
+              	echo "/sbin/iptables -D GUARDIAN -w -s $IP -j DROP && $(echo "$IPTABLES_SAVE")" | /usr/bin/at now + $BAN_TIME
+
+		#LOG:
+		echo "security-assistant.bash S6"
+
+	else
+
+               	/sbin/iptables -A GUARDIAN -s $IP -j DROP       # Add $IP to the Black List, more complicated script:
+                eval "$IPTABLES_SAVE"                           # https://unix.stackexchange.com/a/23116/201297 , https://unix.stackexchange.com/a/296852/201297
+
+		printf "%-46s %-16s %s %-14s %s\n" "On $DATE at $TIME - This IP or CIDR:" "$IP" "was added to the DROP (BAN) List by" "$AGENT." "Unblock command: sudo iptables -D GUARDIAN -s $IP -j DROP" | /usr/bin/tee -a "$BAN_LIST"
+
+		#LOG:
+		echo "security-assistant.bash S7"
+
+	fi
+
+else 		# Else something is not correct
+
+		echo "Usage: <IP> [ ModSecurity | ModEvasive | Guardian | a2Analyst ] or [ --DROP \"log note\" | --DROP-CLEAR \"log note\" | --ACCEPT \"log note\" | --ACCEPT-CHAIN \"log note\" ]"; echo;
+
                 exit 1
+
 fi
 
 ## Log the current thread
-echo "security-assistant.bash S8"
 
-NOTES_="$(echo "$NOTES" | sed -e 's/-my-custom-divider-/; /g')"
-echo "On $DATE at $TIME - $AGENT: Enormous activity from this source IP address was detected: $IP   ${NOTES_}" >> "$hCACHE"
+		#LOG:
+		echo "security-assistant.bash S8"
+
+NOTES_="$(echo "$NOTES" | sed -e 's/-DiViDeR-d1v1d3r-/; /g')"
+printf "%s %-14s %-16s %s\n" "On $DATE at $TIME -" "$AGENT:" "$IP" "Notes: ${NOTES_}" >> "$hCACHE"
 
 ## Construct E-MAIL
 echo "security-assistant.bash S9"
@@ -102,7 +162,7 @@ echo "security-assistant.bash S9"
                 printf "\n$AGENT:\n" >> $EMAIL_BODY
 if [ "$AGENT" == "ModSecurity" ]; then
                 printf "\nNew transgression has been detected from this source IP address: $IP\n\n" >> $EMAIL_BODY
-                echo "${NOTES}" | sed -e 's/-my-custom-divider-/\n/g' >> $EMAIL_BODY
+                echo "${NOTES}" | sed -e 's/-DiViDeR-d1v1d3r-/\n/g' >> $EMAIL_BODY
 else
                 printf "\nMassive connections has been detected from this source IP address: $IP\n" >> $EMAIL_BODY
 fi
@@ -118,13 +178,17 @@ fi
 
 
 # Send E-MAIL notification
-echo "security-assistant.bash S10"
+
+		#LOG:
+		echo "security-assistant.bash S10"
 
 cat $EMAIL_BODY | /usr/bin/mail -r "$EMAIL_FROM" -s "Attack Detected - ${HOSTNAME^^}" $EMAIL_TO
 
 
 # Remove lock file for future checks
-echo "security-assistant.bash S11"
+
+		#LOG:
+		echo "security-assistant.bash S11"
 
 if [ "$AGENT" == "ModEvasive" ]; then
         rm -f "$EVASIVE_LOG/dos-$IP"
@@ -132,7 +196,9 @@ fi
 
 
 # Add clarification to the copy of the last sent email
-echo "security-assistant.bash S12"
+
+		#LOG:
+		echo "security-assistant.bash S12"
 
 printf "\n***\n This email has been sent to $EMAIL_TO at $TIME\n\n" >> $EMAIL_BODY
 
