@@ -1,0 +1,5 @@
+.exe
+/moo
+/foo
+/bar/baz
+?param=<SCRIPT>foo</SCRIPT>.jsp

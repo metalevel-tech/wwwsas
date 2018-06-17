@@ -1,0 +1,82 @@
+## --------------- ##
+## wiki.s-z-s.info ##
+## --------------- ##
+<VirtualHost *:80>
+
+	ServerName wiki.example.com
+	ServerAdmin admin@wiki.example.com
+
+	# Redirect Requests to SSL
+	Redirect permanent / https://wiki.example.com/
+
+	ErrorLog ${APACHE_LOG_DIR}/wiki.example.com.error.log
+	CustomLog ${APACHE_LOG_DIR}/wiki.example.com.access.log combined
+
+</VirtualHost>
+
+<IfModule mod_ssl.c>
+
+    <VirtualHost _default_:443>
+
+	ServerName wiki.example.com
+	ServerAdmin admin@wiki.example.com
+		
+	# According MWiki Manual:Security
+	php_flag register_globals off
+		
+	ErrorLog ${APACHE_LOG_DIR}/wiki.example.com.error.log
+	CustomLog ${APACHE_LOG_DIR}/wiki.example.com.access.log combined
+
+	SSLEngine on
+        SSLCertificateFile /etc/letsencrypt/live/example.com/cert.pem
+        SSLCertificateKeyFile /etc/letsencrypt/live/example.com/privkey.pem
+        SSLCertificateChainFile /etc/letsencrypt/live/example.com/chain.pem
+
+	<FilesMatch "\.(cgi|shtml|phtml|php)$">
+		SSLOptions +StdEnvVars
+	</FilesMatch>
+
+	<Directory /usr/lib/cgi-bin>
+		SSLOptions +StdEnvVars
+	</Directory>
+
+	DocumentRoot "/var/www/wiki.example.com"
+
+	<Directory "/var/www/wiki.example.com">	
+		Options None FollowSymLinks
+		#Allow .htaccess
+		AllowOverride All
+		Require all granted
+		<IfModule security2_module>
+			#SecRuleEngine Off
+		</IfModule>
+	</Directory>
+
+	<IfModule security2_module>
+		<LocationMatch "/index.php.*">
+		        #SecRuleEngine Off
+		</LocationMatch>
+	</IfModule>
+
+	# According to MWiki Manual:Security
+	<Directory "/var/www/wiki.example.com/images">
+		Options -Indexes
+		# Allow .htaccess files
+		AllowOverride All
+		# Serve HTML as plaintext, don't execute SHTML
+		AddType text/plain .html .htm .shtml .php .phtml .php5
+		# Don't run arbitrary PHP code.
+		php_admin_flag engine off
+		# If you've other scripting languages, disable them too.
+	</Directory>
+
+	#According to MWiki Manual:Security
+	<Directory "/var/www/wiki.example.com/images/deleted">
+		Deny from all			
+		AllowOverride AuthConfig Limit
+		Require local
+	</Directory>
+
+    </VirtualHost>
+
+</IfModule>

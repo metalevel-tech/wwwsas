@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# Name:    www-security-assistant.conf.example - the default configuration file of the script bundle WWWSecurityAssistant.
+# Summary: This file is sourced You should create your own configuration file by removing of the '.example' extension.
+#          When 'www-security-assistant.conf' exist it will be sourced in 'www-security-assistant.bash'.
+# Home:    https://github.com/pa4080/security-assistant
+# Author:  Spas Z. Spasov <spas.z.spasov@gmail.com> (C) 2018
+# Default: The default work directory is '/var/www-security-assistant' (see below).
+#          If you are going to change this value, do it for the entire script bundle.
+
+# The directory where the script is located - see the 'default' note in the beginning.
+#WORK_DIR="/var/www-security-assistant"
+
+# Get server's host-name, or set it: HOSTNAME='example.com'
+HOSTNAME=$(hostname -f)
+
+# Or just enter <email@example.com>
+EMAIL_FROM="Security Assistant <root@$HOSTNAME>"
+
+# Multiple accounts separated by commas are allowed: 
+# EMAIL_TO="your@email.foo, your@email.bar, your@email.baz"
+EMAIL_TO="$RUN_USER@$HOSTNAME"
+
+# Here is used additional script as iptables save command: https://www.cyberciti.biz/faq/iptables-read-and-block-ips-subnets-from-text-file/
+# It can be replaced with something as its content: iptables-save > /var/www-security-assistant/iptables-CURRENT.conf
+IPTABLES_SAVE="$WORK_DIR/iptables-save.sh"
+
+# Time-units can be minutes, hours, days, or weeks; see `man at`; `sudo atq` lists pending jobs; `sudo at -c job_number` shows the job's content;
+BAN_TIME="5 minutes"
+
+# Limit of tolerance of transgressions from certain IP
+LIMIT="10"
+
+# This value is used within the comunication between 'modsecurity-assistant.sh' and 'www-security-assistant.bash'
+# This solves an old issue and it is not longer needed - but why not :)
+MY_DIVIDER='-DiViDeR-d1v1d3r-'
+
+# The log directory mentioned in /etc/apache2/envvars
+APACHE_LOG="/var/log/apache2"
+
+# The log directory mentioned in /etc/apache2/mod-available/evasive.conf
+EVASIVE_LOG="/var/log/apache2_mod_evasive"
+
+# The log directory mentioned in /etc/apache2/mods-available/security2.conf or /etc/modsecurity/modsecurity.conf
+SECURITY_LOG="/var/log/apache2_mod_security2"
+
+# Set the list of the available Agents in tha Automatic mode
+AGENTS=("Guardian" "ModSecurity" "ModEvasive" "a2Analyst")
+
+# In the white-list put at least your server's IP and localhost IP 127.0.0.1
+WHITE_LIST="$WORK_DIR/iptables-ACCEPT.list"
+BAN_LIST="$WORK_DIR/iptables-DROP.list"
+BAN_CLEAR_LIST="$WORK_DIR/iptables-DROP-CLEAR.list"
+
+# Please be careful when manipulate this file manually
+HISTORY="$WORK_DIR/www-security-assistant.history"
+
+# This file will exists until next thread,
+# it contains the content of the last email sent by the script
+EMAIL_BODY="$WORK_DIR/www-security-assistant.mail"
+
+# Set the content of the frequent used messages, touch some files with attention to create them in case they do not exist
+USAGE="Usage: <IP> [ ModSecurity | ModEvasive | Guardian | a2Analyst ] or [ --DROP 'log notes' | --DROP-CLEAR 'log notes' | --ACCEPT 'log notes' | --ACCEPT-CHAIN 'log notes' ]"
+UNBLOCK="Unblock: sudo iptables -D GUARDIAN -s $IP -j DROP | sudo www-security-assistant.bash $IP --DROP-CLEAR 'log notes'" 

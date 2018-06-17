@@ -1,0 +1,77 @@
+<VirtualHost *:80>
+
+	ServerName example.com
+	ServerAlias www.example.com
+
+	ServerAdmin admin@trivictoria.org
+
+        # Redirect Requests to HTTPS
+	Redirect permanent / https://example.com
+
+        ErrorLog ${APACHE_LOG_DIR}/example.com.error.log
+        CustomLog ${APACHE_LOG_DIR}/example.com.access.log combined
+
+</VirtualHost>
+
+<IfModule mod_ssl.c>
+
+    <VirtualHost _default_:443>
+
+	ServerName example.com
+	ServerAlias www.example.com
+
+	ServerAdmin admin@example.com
+
+        ErrorLog ${APACHE_LOG_DIR}/example.com.error.log
+        CustomLog ${APACHE_LOG_DIR}/example.com.access.log combined
+
+	SSLEngine on
+	SSLCertificateFile /etc/letsencrypt/live/example.com/cert.pem
+	SSLCertificateKeyFile /etc/letsencrypt/live/example.com/privkey.pem
+	SSLCertificateChainFile /etc/letsencrypt/live/example.com/chain.pem
+	
+	#php_admin_flag engine off  
+
+        DocumentRoot /var/www/example.com
+	
+	<Directory /var/www/example.com>
+
+		Options None FollowSymLinks
+		#AllowOverride None
+		AllowOverride All
+		# Default: Require all granted
+		# Require all denied
+		Require all granted
+		
+		<IfModule security2_module>
+			#SecRuleEngine Off
+		</IfModule>
+
+	</Directory>
+
+	# Относно разширението: Loco Translate - стойностите са променени от 131072 на 1310720
+	# https://wordpress.org/support/topic/error-request-entity-too-large-4/
+	# https://wordpress.org/support/topic/error-request-entity-too-large-2/
+
+        <LocationMatch "/wp-admin/admin-ajax.php">
+		<IfModule security2_module>
+			SecRequestBodyNoFilesLimit 1310720
+			SecRequestBodyInMemoryLimit 1310720
+		</IfModule>
+        </LocationMatch>
+
+        # --- Create REQUEST_URI words blacklist -------
+        #
+        # Increase Request Entity for example.com/wp-admin/post.php
+        #
+        # Alternatively these values could be changed globally globallyin /etc/modsecurity/modsecurity.conf
+
+        <LocationMatch /wp-admin/post.php>
+                SecRequestBodyLimit 131072000
+                SecRequestBodyNoFilesLimit 1310720
+                SecRequestBodyInMemoryLimit 1310720
+        </LocationMatch>
+
+    </VirtualHost>
+
+</IfModule>
