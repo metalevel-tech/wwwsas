@@ -1,0 +1,1 @@
+* * * * * root "/etc/www-security-assistant/flood-detector.bash" 'AutoMode' >> "/etc/www-security-assistant/www-security-assistant.exec.log" 2>&1
