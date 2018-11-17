@@ -74,7 +74,7 @@ else
     exit 0
 fi
 
-# Clear the Error log
+# Clear the logs
 >"$WWW_SAS_ERROR_LOG"
 
 # Output a header for the log file
@@ -85,20 +85,25 @@ printf "\n\n*****\nSECURITY LOG from %s on %s : %s : %s : %s\n\n" "$TIME" "$DATE
 # Action section
 # --------------
 
-# If the $IP is a member of the $WWW_SAS_WHITE_LIST (grep -q "$IP" "$WWW_SAS_WHITE_LIST" - doesn't work)
+# If the $IP is a member of the $WWW_SAS_WHITE_LIST :: Call in AUTO Mode (grep -q "$IP" "$WWW_SAS_WHITE_LIST" - doesn't work)
 if [[ ! -z $(grep -o "$IP" "$WWW_SAS_WHITE_LIST") ]] && [[ " ${AGENTS[@]} " == *" ${AGENT} "* ]]
 then
-    # Output a message and exit
+
+    # Output a message and go forward to send notification email
     printf 'The IP address %s is a member of our Whitelist!\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG" && MAIL_FLAG='TYPE_1'
 
+# If the $IP is a member of the $WWW_SAS_WHITE_LIST :: Call in CLI Mode (grep -q "$IP" "$WWW_SAS_WHITE_LIST" - doesn't work)
 elif [[ ! -z $(grep -o "$IP" "$WWW_SAS_WHITE_LIST") ]] && [[ ! " ${AGENTS[@]} " == *" ${AGENT} "* ]]
 then
     # Output a message and exit
-    printf 'The IP address %s is a member of out withelist!\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG" && MAIL_FLAG='DO_NOT_SEND'
+    printf 'The IP address %s is a member of out withelist!\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG"
 
+    exit 0
+    
 # Remove $IP from the DROP (BAN) List, syntax: www-security-assistant.bash <IP> --CLEAR 'log notes'"
 elif [[ $AGENT == "--CLEAR" ]]
 then
+
     /sbin/iptables -L "$WWW_SAS_IPTBL_CHAIN" -n --line-numbers; echo
     sed -i "/$IP/d" "$WWW_SAS_HISTORY"
     sed -i "/$IP/d" "$WWW_SAS_BAN_LIST"
@@ -106,19 +111,24 @@ then
     /sbin/iptables -C "$WWW_SAS_IPTBL_CHAIN" -w -s "$IP" -j DROP && /sbin/iptables -D "$WWW_SAS_IPTBL_CHAIN" -w -s "$IP" -j DROP && echo "The rule has been removed from the chain $WWW_SAS_IPTBL_CHAIN!"
     eval "$WWW_SAS_IPTABLES_SAVE"; echo
     /sbin/iptables -L "$WWW_SAS_IPTBL_CHAIN" -n --line-numbers; echo
+    
     # Output and Log a message and exit
     printf 'On %-10s at %-8s | This IP/CIDR was removed from the Banlist by @%s: %-18s \t| Notes: %s\n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" | tee -a "$WWW_SAS_BAN_CLEAR_LIST"
+    
     exit 0
 
 # If there is a DROP rule for the $IP, and if the IP is a member of the $WWW_SAS_BAN_LIST, output a message and exit
 elif [[ ! -z ${@+x} ]] && grep -q "^DROP.*$IP" <(/sbin/iptables -L -n -w)
 then
+
     if [[ ! -z $(grep -o "$IP" "$WWW_SAS_BAN_LIST") ]] && grep -q "^DROP.*$IP" <(/sbin/iptables -L -n -w)
     then
-	printf 'The IP address %s is already added to the Banlist, also there is a Iptables rule!\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG" && MAIL_FLAG='DO_NOT_SEND'
+	    printf 'The IP address %s is already added to the Banlist, also there is a Iptables rule!\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG"
+        exit 0
     elif grep -q "^DROP.*$IP" <(/sbin/iptables -L -n -w)
     then
-        printf 'Iptables DROP rule for %s already exists. The agent should wait for a while.\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG" && MAIL_FLAG='DO_NOT_SEND'
+        printf 'Iptables DROP rule for %s already exists. The agent should wait for a while.\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG"
+        exit 0
     else
         printf 'Something is wrong! The processing of %s does not went correctly!\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG" && MAIL_FLAG='TYPE_1'
     fi
@@ -126,9 +136,11 @@ then
 # Add $IP to the DROP (BAN) List, syntax: www-security-assistant.bash <IP> --DROP 'log notes'"
 elif [[ $AGENT == "--DROP" ]]
 then
+
     /sbin/iptables -A "$WWW_SAS_IPTBL_CHAIN" -w -s "$IP" -j DROP
     /sbin/iptables -L "$WWW_SAS_IPTBL_CHAIN" -w -n --line-numbers
     eval "$WWW_SAS_IPTABLES_SAVE"
+
     # Output and Log a message and exit
     printf 'On %-10s at %-8s | This IP/CIDR was added to the Banlist by @%s: %-18s \t| Notes: %s\n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" | tee -a "$WWW_SAS_BAN_LIST"
 
@@ -144,14 +156,17 @@ then
 # Add $IP to the ACCEPT (WHITE) List, syntax: www-security-assistant.bash <IP> --ACCEPT 'log notes'"
 elif [[ $AGENT == "--ACCEPT" ]]
 then
+
     # Output and Log a message and exit
     printf 'On %-10s at %-8s | This IP/CIDR was added to the ACCEPT (WHITE) List by @%s: %-18s \t| Notes: %s\n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" | tee -a "$WWW_SAS_WHITE_LIST"
     printf 'A rule has benn added to our Whitelist - %s \nFor ModSecurity and ModEvasi you should do it on yourself.\n' "$WWW_SAS_WHITE_LIST"
+
     exit 0
 
 # Add $IP to the ACCEPT (WHITE) List and add Iptables rule, syntax: www-security-assistant.bash <IP> --ACCEPT-CHAIN 'log notes'"
 elif [[ "$AGENT" == "--ACCEPT-CHAIN" ]]
 then
+
     /sbin/iptables -A "$WWW_SAS_IPTBL_CHAIN" -w -s "$IP" -j ACCEPT
     /sbin/iptables -L "$WWW_SAS_IPTBL_CHAIN" -w -n --line-numbers
     eval "$WWW_SAS_IPTABLES_SAVE"
@@ -159,15 +174,20 @@ then
     NOTE='Iptables rule has been created!'
     printf 'On %-10s at %-8s | This IP/CIDR was added to the ACCEPT (WHITE) List by @%s: %-18s \t| Notes: %s %s\n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" "$NOTE" | tee -a "$WWW_SAS_WHITE_LIST"
     printf 'A rule has benn added to our Whitelist - %s \nAlso Iptables rule has been added.\nFor ModSecurity and ModEvasi you should do it on yourself.\n' "$WWW_SAS_WHITE_LIST"
+
     exit 0
 
 # If the $AGENT belogs to the list of $AGENTS
 elif [[ " ${AGENTS[@]} " == *" ${AGENT} "* ]]
 then
-    # Check for errors
+
+    # Add the Iptales rule first!!! Alt. rule: `iptables -I INPUT -p tcp --dport 80 -s %s -j DROP`
+    /sbin/iptables -A "$WWW_SAS_IPTBL_CHAIN" -w -s "$IP" -j DROP
+
+    # Check for errors - this works together with the abovecondition: elif [[ ! -z ${@+x} ]] && grep -q "^DROP.*$IP" <(/sbin/iptables -L -n -w)
     if [[ ! -z $(grep -o "$IP" "$WWW_SAS_BAN_LIST") ]]
     then
-	printf 'The IP address %s belongs to our Banlist, but there is not Iptables rule!\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG" && MAIL_FLAG='TYPE_2'
+	    printf 'The IP address %s belongs to our Banlist, but there is not Iptables rule!\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG" && MAIL_FLAG='TYPE_2'
     fi
 
     # Get the number of the previous transgressions from this $IP and increment +1 to get the current number;
@@ -177,10 +197,8 @@ then
 
     if [[ ! -z $AbuseIPDB_APIKEY ]] && [[ $AbuseIPDB_ANALYSE_IP_AND_BAN == 'YES' ]] && [[ "$(eval "$WWW_SAS_ABUSEIPDB_EXEC" "$IP" 'analyse-ip')" == 'Bad Guy' ]]
     then
-        # Add $IP to the Black List add Iptales rule. Please note that
-        # The $NOTES are not logged here, this will be done within the following section: Log the current thread
-        /sbin/iptables -A "$WWW_SAS_IPTBL_CHAIN" -w -s "$IP" -j DROP
 
+        # Make the issued Iptables rule permanent
         eval "$WWW_SAS_IPTABLES_SAVE"
 
         if [[ -z $(grep -o "$IP" "$WWW_SAS_BAN_LIST") ]]
@@ -189,20 +207,23 @@ then
         fi
 
         ACTION_SPECIFFIC_MESSAGE="$(printf 'Due to an analyse, provided by @%s, they <i>was added to the Banlist</i> on %s at %s!' "$WWW_SAS_ABUSEIPDB_FULL" "$DATE" "$TIME")"
-        AbuseIPDB_REPORT='YES'
+
+        if [[ ! -z $AbuseIPDB_APIKEY ]]
+        then
+            AbuseIPDB_REPORT='YES'
+        fi
+
     elif [[ ! "$IP_SINS" -ge "$LIMIT" ]]
     then
-        # Add the following firewall rule (block IP); alt.: `iptables -I INPUT -p tcp --dport 80 -s %s -j DROP`
-        /sbin/iptables -I "$WWW_SAS_IPTBL_CHAIN" -w -s "$IP" -j DROP
-        # Unblock offending IP after $BAN_TIME through the `at` command
+
+        # Unblock the offending IP address after $BAN_TIME via the `at` command
         echo "/sbin/iptables -D $WWW_SAS_IPTBL_CHAIN -w -s \"$IP\" -j DROP && $WWW_SAS_IPTABLES_SAVE" | at now + "$BAN_TIME"
 
         ACTION_SPECIFFIC_MESSAGE="$(printf 'The system has blocked the IP by the firewall for %s as from %s on %s.' "$BAN_TIME" "$TIME" "$DATE")"
-    else
-        # Add $IP to the Black List add Iptales rule. Please note that
-        # The $NOTES are not logged here, this will be done within the following section: Log the current thread
-        /sbin/iptables -A "$WWW_SAS_IPTBL_CHAIN" -w -s "$IP" -j DROP
 
+    else
+
+        # Make the issued Iptables rule permanent
         eval "$WWW_SAS_IPTABLES_SAVE"
 
         if [[ -z $(grep -o "$IP" "$WWW_SAS_BAN_LIST") ]]
@@ -216,10 +237,18 @@ then
         then
             AbuseIPDB_REPORT='YES'
         fi
+
     fi
 
     # Remove ModEvasive lock file
     if [[ $AGENT == 'ModEvasive' ]]; then printf 'rm -f %s' "$MOD_EVASIVE_LOG_DIR/dos-$IP" | at now + "$BAN_TIME"; fi
+
+    # Prepare the log notes, that comes from modsecurity-assistant.bash and flood-detector.bash
+    # The custom divider is used to dicourage some bugs when the note comes from ModSecurity
+    NOTES_LOCAL="$(echo "$NOTES" | sed "s/$MY_DIVIDER/; /g")"
+
+    # Log the current thread into the $WWW_SAS_HISTORY file
+    printf 'On %-10s at %-8s | %-12s : %-18s | Notes: %s\n' "$DATE" "$TIME" "$AGENT" "$IP" "$NOTES_LOCAL" | tee -a "$WWW_SAS_HISTORY"
 
 # For all other cases
 else
@@ -227,16 +256,12 @@ else
     exit 0
 fi
 
-# Log the current thread into the $WWW_SAS_HISTORY file
-printf 'On %-10s at %-8s | %-12s : %-18s | Notes: %s\n' "$DATE" "$TIME" "$AGENT" "$IP" "$NOTES_LOCAL" | tee -a "$WWW_SAS_HISTORY"
-
 
 # ---------------------
 # AbuseIPDB Integration
 # ---------------------
 
-# Compose reference links for the $IP. Note here is applied the integration with www.abuseipdb.com. If you want to use this feature, you should provide correct value for $AbuseIPDB_APIKEY.
-
+# If you want to use this feature, you should provide correct value for $AbuseIPDB_APIKEY.
 if [[ ! -z $AbuseIPDB_APIKEY ]]
 then
 
@@ -272,17 +297,15 @@ fi
 # -----------------------------------
 
 # By the $MAIL_FLAG we manage the email processing
-# 'DO_NOT_SEND' - will interrupt the execution of the script at this point - so an email will not be sent
 # 'TYPE_1'      - will interrupt the email compose at the middle - so only short whitelisting instructions will be added
 # 'TYPE_2'      - will output the error message in the middle of the email body - so full whitelisting instructions will be added
-if [[ $MAIL_FLAG == 'DO_NOT_SEND' ]]; then exit 0; fi
+#if [[ $MAIL_FLAG == 'DO_NOT_SEND' ]]; then exit 0; fi ## DEPRECATED - FOR REMOVAL - ALL OF THESE exit 0 are in their places ##
 
 # If the destination email is not set, we do not need to process the rest part
 if [[ -z "$EMAIL_TO" ]] && [[ -z "$EMAIL_TO_PLAIN" ]]; then exit 0; fi
 
-# Prepare the notes that comes from modsecurity-assistant.bash and flood-detector.bash
+# Prepare the log notes, that comes from modsecurity-assistant.bash and flood-detector.bash
 # The custom divider is used to dicourage some bugs when the note comes from ModSecurity
-NOTES_LOCAL="$(echo "$NOTES" | sed "s/$MY_DIVIDER/; /g")"
 NOTES_EMAIL="$(echo "$NOTES" | sed "s/$MY_DIVIDER/\n/g")"
 
 # E-MAIL construction section
@@ -295,10 +318,11 @@ printf '</style>\n'
 printf '\n</head>\n<body style="font-family: monospace; max-width: 720px;">\n'
 printf '\n<h3 style="color: #000000;"><a href="%s" style="text-decoration: none;color: #000000;">%s</a> %s</h3>\n' "${HOSTNAME^^}" "${HOSTNAME^^}" "$AGENT"
 
+IP_REFERENCE="<a href=\"$IP\">$IP</a> | <a href=\"www.abuseipdb.com/check/$IP\">AbuseIPDB</a> | <a href=\"geoipinfo.org/?ip=$IP\">GeoIPInfo</a>"
+
 if [[ $AGENT == "$AGENT_MODSEC" ]]
 then
 
-    IP_REFERENCE="<a href=\"$IP\">$IP</a> | <a href=\"www.abuseipdb.com/check/$IP\">AbuseIPDB</a> | <a href=\"geoipinfo.org/?ip=$IP\">GeoIPInfo</a>"
     printf '\n<p style="margin-bottom: 5px;">New transgression has been detected. <br>Source: %s</p>\n' "$IP_REFERENCE"
     # Add <a href=..> to `Our server`
     NOTES_EMAIL="$(echo "$NOTES_EMAIL" | sed -r 's/^(Our Server: )(.*)$/\1<a href="\2">\2<\/a>/')"
