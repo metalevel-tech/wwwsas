@@ -213,14 +213,14 @@ then
     /sbin/iptables -A "$WWW_SAS_IPTBL_CHAIN" -w -s "$IP" -j DROP
 
     # Check for errors - this works together with the abovecondition: elif [[ ! -z ${@+x} ]] && grep -q "^DROP.*$IP" <(/sbin/iptables -L -n -w)
-    if [[ ! -z $(grep -o "$IP" "$WWW_SAS_BAN_LIST") ]]
+    if [[ ! -z $(grep -wo "$IP" "$WWW_SAS_BAN_LIST") ]]
     then
 	    printf 'The IP address %s belongs to our Banlist, but there is not Iptables rule!\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG" && MAIL_FLAG='TYPE_2'
     fi
 
     # Get the number of the previous transgressions from this $IP and increment +1 to get the current number;
     # Note '$(grep -c $IP $WWW_SAS_HISTORY)' sometimes works sometime doesn`t work '!!!'
-    IP_SINS=$(awk '{print $8}' "$WWW_SAS_HISTORY" | grep "$IP" | wc -l)
+    IP_SINS=$(awk '{print $8}' "$WWW_SAS_HISTORY" | grep -wo "$IP" | wc -l)
     IP_SINS=$((IP_SINS+1))
 
     if [[ ! -z $AbuseIPDB_APIKEY ]] && [[ $AbuseIPDB_ANALYSE_IP_AND_BAN == 'YES' ]] && [[ "$(eval "$WWW_SAS_ABUSEIPDB_EXEC" "$IP" 'analyse-ip')" == 'Bad Guy' ]]
