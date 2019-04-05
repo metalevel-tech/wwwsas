@@ -1,0 +1,16 @@
+<IfModule security2_module>
+
+	# Default Debian dir for modsecurity's persistent data
+	SecDataDir /var/cache/modsecurity
+
+	# Include all the *.conf files in /etc/modsecurity.
+	# Keeping your local configuration in that directory
+	# will allow for an easy upgrade of THIS file and
+	# make your life easier
+        IncludeOptional /etc/modsecurity/*.conf
+
+	# ModSecurity OWASP Core Rule Set 3.x
+        IncludeOptional /etc/modsecurity/owasp-modsecurity-crs/crs-setup.conf
+        IncludeOptional /etc/modsecurity/owasp-modsecurity-crs/rules/*.conf
+
+</IfModule>

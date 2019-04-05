@@ -1,0 +1,79 @@
+# ---------------------
+# wordpress.example.com
+# ---------------------
+
+<VirtualHost *:80>
+
+	ServerName wordpress.example.com
+
+	ServerAdmin admin@wordpress.example.com
+
+        # Redirect Requests to HTTPS
+	Redirect permanent / https://wordpress.example.com/
+
+        ErrorLog ${APACHE_LOG_DIR}/wordpress.example.com.error.log
+        CustomLog ${APACHE_LOG_DIR}/wordpress.example.com.access.log combined
+
+</VirtualHost>
+
+<IfModule mod_ssl.c>
+
+    <VirtualHost _default_:443>
+
+	ServerName wordpress.example.com
+
+	ServerAdmin admin@wordpress.example.com
+
+        ErrorLog ${APACHE_LOG_DIR}/wordpress.example.com.error.log
+        CustomLog ${APACHE_LOG_DIR}/wordpress.example.com.access.log combined
+
+	SSLEngine on
+	SSLCertificateFile /etc/letsencrypt/live/wordpress.example.com/cert.pem
+	SSLCertificateKeyFile /etc/letsencrypt/live/wordpress.example.com/privkey.pem
+	SSLCertificateChainFile /etc/letsencrypt/live/wordpress.example.com/chain.pem
+	
+	#php_admin_flag engine off  
+
+        DocumentRoot /var/www/wordpress.example.com
+	
+	<Directory /var/www/wordpress.example.com>
+
+		Options None FollowSymLinks
+		#AllowOverride None
+		AllowOverride All
+		# Default: Require all granted
+		# Require all denied
+		Require all granted
+		
+		<IfModule security2_module>
+			#SecRuleEngine Off
+		</IfModule>
+
+	</Directory>
+
+	# Относно разширението: Loco Translate - стойностите са променени от 131072 на 1310720
+	# https://wordpress.org/support/topic/error-request-entity-too-large-4/
+	# https://wordpress.org/support/topic/error-request-entity-too-large-2/
+
+        <LocationMatch "/wp-admin/admin-ajax.php">
+		<IfModule security2_module>
+			SecRequestBodyNoFilesLimit 1310720
+			SecRequestBodyInMemoryLimit 1310720
+		</IfModule>
+        </LocationMatch>
+
+        # --- Create REQUEST_URI words blacklist -------
+        # Increase Request Entity for wordpress.example.com/wp-admin/post.php
+        # Alternatively these values could be changed globally globallyin /etc/modsecurity/modsecurity.conf
+
+        <LocationMatch /wp-admin/post.php>
+		<IfModule security2_module>
+			SecRequestBodyLimit 131072000
+			SecRequestBodyNoFilesLimit 1310720
+			SecRequestBodyInMemoryLimit 1310720
+		</IfModule>
+        </LocationMatch>
+
+    </VirtualHost>
+
+</IfModule>
