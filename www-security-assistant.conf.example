@@ -162,10 +162,10 @@ WWW_SAS_BAN_CLEAR_LIST="${WORK_DIR}/www-security-assistant.clear.list"
 WWW_SAS_HISTORY="${WORK_DIR}/${WWW_SAS_FULL}.history"
 
 # The execution log file used by the satellite scripts
-WWW_SAS_EXEC_LOG="${WWW_SAS_TMP}/${WWW_SAS_FULL}.exec.log"; chown www-data "$WWW_SAS_EXEC_LOG"
+WWW_SAS_EXEC_LOG="${WWW_SAS_TMP}/${WWW_SAS_FULL}.exec.log"; touch "$WWW_SAS_EXEC_LOG" && chown www-data "$WWW_SAS_EXEC_LOG"
 
 # Error log file used to log internal messages before send them by email
-WWW_SAS_ERROR_LOG="${WWW_SAS_TMP}/${WWW_SAS_FULL}.error.log"; chown www-data "$WWW_SAS_ERROR_LOG"
+WWW_SAS_ERROR_LOG="${WWW_SAS_TMP}/${WWW_SAS_FULL}.error.log"; touch "$WWW_SAS_ERROR_LOG" && chown www-data "$WWW_SAS_ERROR_LOG"
 
 # The IPTables chain that is used by the script
 WWW_SAS_IPTBL_CHAIN='WWWSAS'
