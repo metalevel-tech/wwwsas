@@ -1,9 +1,5 @@
 # Update log
 
-## Features, presented in the master branch, not presented in the [stable.v.4]65] branch
-
-* ...
-
 ## Features, presented in [stable.v.4][6], not presented in the [stable.v.3][5] branch
 
 * Full integration with [`www.abuseipdb.com`](https://www.abuseipdb.com) [API V2](https://docs.abuseipdb.com/).

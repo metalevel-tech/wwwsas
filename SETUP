@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# $1 - 'branch' (default: master) of https://github.com/pa4080/www-security-assistant
+# $1 - 'branch' (default: stable.v.4) of https://github.com/pa4080/www-security-assistant
 # $2 - 'full-access' (default: unset) with this option set some additional things will be done, that are not accessible on some virtualizations as OpenVZ.
 
 
@@ -34,7 +34,7 @@ DIFF_TEST='/usr/bin/colordiff -c'
 [[ "$EUID" -ne 0 ]] && { echo "Please run as root (use sudo)."; exit 0; }
 
 # Which branch to be pulled
-[[ -z ${1+x} ]] && BRANCH='master' || BRANCH="${1}"
+[[ -z ${1+x} ]] && BRANCH='stable.v.4' || BRANCH="${1}"
 
 # Basic envvars
 WORK_DIR="/etc/www-security-assistant"
@@ -56,6 +56,12 @@ GRE='\033[0;32m'
 YEL='\033[1;33m'
 NCL='\033[0m'
 
+# ---------------
+# Output a legend
+# ---------------
+
+echo "The full syntax of the command is:"
+echo -e "\n${GRE}sudo ./SETUP 'branch-name' 'full-access'${NCL} # Where 'full-access' is not available in OpenVZ\n"
 
 # -----------------------------------------------------------------------
 # Functions section BEGIN
