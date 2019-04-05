@@ -56,12 +56,14 @@ GRE='\033[0;32m'
 YEL='\033[1;33m'
 NCL='\033[0m'
 
+
 # ---------------
 # Output a legend
 # ---------------
 
 echo "The full syntax of the command is:"
 echo -e "\n${GRE}sudo ./SETUP 'branch-name' 'full-access'${NCL} # Where 'full-access' is not available in OpenVZ\n"
+
 
 # -----------------------------------------------------------------------
 # Functions section BEGIN
