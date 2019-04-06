@@ -149,13 +149,13 @@ WWW_SAS_ABUSEIPDB_EXEC="${WORK_DIR}/${WWW_SAS_ABUSEIPDB_FULL}.bash"
 # Define a cutom tmp directory
 WWW_SAS_TMP="${WORK_DIR}/tmp"; mkdir -p "$WWW_SAS_TMP" && chown www-data "$WWW_SAS_TMP"
 
-# The file where will be kept the data about the IPs added to the Whitelist. In the white-list put at least your server's IP and localhost IP 127.0.0.1
+# The file where will be kept the data about the IPs added to the WhiteList. In the white-list put at least your server's IP and localhost IP 127.0.0.1
 WWW_SAS_WHITE_LIST="${WORK_DIR}/www-security-assistant.white.list"
 
-# The file where will be kept the data about the IPs added to the Banlist
+# The file where will be kept the data about the IPs added to the BanList
 WWW_SAS_BAN_LIST="${WORK_DIR}/www-security-assistant.black.list"
 
-# The file where will be kept the data about the IPs removed from the Banlist
+# The file where will be kept the data about the IPs removed from the BanList
 WWW_SAS_BAN_CLEAR_LIST="${WORK_DIR}/www-security-assistant.clear.list"
 
 # The file where will be kept the data about the transhresions. Please be careful when manipulate this file manually

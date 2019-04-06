@@ -93,11 +93,11 @@ if [[ ! -z $(grep -o "$IP" "$WWW_SAS_WHITE_LIST") ]] && [[ " ${AGENTS[@]} " == *
 then
 
     # Output a message and go forward to send notification email
-    printf 'The IP address %s is a member of our Whitelist!\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG" && MAIL_FLAG='TYPE_1'
+    printf 'The IP address %s is a member of our WhiteList!\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG" && MAIL_FLAG='TYPE_1'
 
     # The ${WWW_SAS_ERROR_LOG}.local is not defined in the configuration file yet, because the states where it is used are in debug state...
     # Maybe such file can be used as analytical base of DOS/DDOS attackers, we just need to collect more data at this moment...
-    printf 'On %-10s at %-8s %-14s according to %-16s: The IP address is a member of our Whitelist! Notes: %s\n' "$DATE" "$TIME" "$AGENT" "$IP" "$(echo "$NOTES" | sed "s/$MY_DIVIDER/; /g")" | tee -a "${WWW_SAS_ERROR_LOG}.local"
+    printf 'On %-10s at %-8s %-14s according to %-16s: The IP address is a member of our WhiteList! Notes: %s\n' "$DATE" "$TIME" "$AGENT" "$IP" "$(echo "$NOTES" | sed "s/$MY_DIVIDER/; /g")" | tee -a "${WWW_SAS_ERROR_LOG}.local"
 
     # Remove ModEvasive lock file
     if [[ $AGENT == 'ModEvasive' ]]; then printf 'rm -f %s' "$MOD_EVASIVE_LOG_DIR/dos-$IP" | at now + "$BAN_TIME"; fi
@@ -124,7 +124,7 @@ then
     /sbin/iptables -L "$WWW_SAS_IPTBL_CHAIN" -n --line-numbers; echo
 
     # Output and Log a message and exit
-    printf 'On %-10s at %-8s | This IP/CIDR was removed from the Banlist by @%s: %-18s \t| Notes: %s\n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" | tee -a "$WWW_SAS_BAN_CLEAR_LIST"
+    printf 'On %-10s at %-8s | This IP/CIDR was removed from the BanList by @%s: %-18s \t| Notes: %s\n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" | tee -a "$WWW_SAS_BAN_CLEAR_LIST"
 
     # Remove ModEvasive lock file
     if [[ $AGENT == 'ModEvasive' ]]; then printf 'rm -f %s' "$MOD_EVASIVE_LOG_DIR/dos-$IP" | at now + "$BAN_TIME"; fi
@@ -138,7 +138,7 @@ then
     if [[ ! -z $(grep -wo "$IP" "$WWW_SAS_BAN_LIST") ]] && grep -wq "^DROP.*$IP" <(/sbin/iptables -L "$WWW_SAS_IPTBL_CHAIN" -n -w)
     then
 
-    	printf 'On %-10s at %-8s %-14s according to %-16s: The IP address is already added to the Banlist, also there is a Iptables rule! Notes: %s\n' "$DATE" "$TIME" "$AGENT" "$IP" "$(echo "$NOTES" | sed "s/$MY_DIVIDER/; /g")" | tee -a "${WWW_SAS_ERROR_LOG}.local"
+    	printf 'On %-10s at %-8s %-14s according to %-16s: The IP address is already added to the BanList, also there is a Iptables rule! Notes: %s\n' "$DATE" "$TIME" "$AGENT" "$IP" "$(echo "$NOTES" | sed "s/$MY_DIVIDER/; /g")" | tee -a "${WWW_SAS_ERROR_LOG}.local"
 
         # Remove ModEvasive lock file
         if [[ $AGENT == 'ModEvasive' ]]; then printf 'rm -f %s' "$MOD_EVASIVE_LOG_DIR/dos-$IP" | at now + "$BAN_TIME"; fi
@@ -170,7 +170,7 @@ then
     eval "$WWW_SAS_IPTABLES_SAVE"
 
     # Output and Log a message and exit
-    printf 'On %-10s at %-8s | This IP/CIDR was added to the Banlist by @%s: %-18s \t| Notes: %s\n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" | tee -a "$WWW_SAS_BAN_LIST"
+    printf 'On %-10s at %-8s | This IP/CIDR was added to the BanList by @%s: %-18s \t| Notes: %s\n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" | tee -a "$WWW_SAS_BAN_LIST"
 
     if [[ ! -z $AbuseIPDB_APIKEY ]]
     then
@@ -187,7 +187,7 @@ then
 
     # Output and Log a message and exit
     printf 'On %-10s at %-8s | This IP/CIDR was added to the ACCEPT (WHITE) List by @%s: %-18s \t| Notes: %s\n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" | tee -a "$WWW_SAS_WHITE_LIST"
-    printf 'A rule has benn added to our Whitelist - %s \nFor ModSecurity and ModEvasi you should do it on yourself.\n' "$WWW_SAS_WHITE_LIST"
+    printf 'A rule has benn added to our WhiteList - %s \nFor ModSecurity and ModEvasi you should do it on yourself.\n' "$WWW_SAS_WHITE_LIST"
 
     exit 0
 
@@ -201,7 +201,7 @@ then
     # Output and Log a message and exit
     NOTE='Iptables rule has been created!'
     printf 'On %-10s at %-8s | This IP/CIDR was added to the ACCEPT (WHITE) List by @%s: %-18s \t| Notes: %s %s\n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" "$NOTE" | tee -a "$WWW_SAS_WHITE_LIST"
-    printf 'A rule has benn added to our Whitelist - %s \nAlso Iptables rule has been added.\nFor ModSecurity and ModEvasi you should do it on yourself.\n' "$WWW_SAS_WHITE_LIST"
+    printf 'A rule has benn added to our WhiteList - %s \nAlso Iptables rule has been added.\nFor ModSecurity and ModEvasi you should do it on yourself.\n' "$WWW_SAS_WHITE_LIST"
 
     exit 0
 
@@ -215,7 +215,7 @@ then
     # Check for errors - this works together with the abovecondition: elif [[ ! -z ${@+x} ]] && grep -q "^DROP.*$IP" <(/sbin/iptables -L -n -w)
     if [[ ! -z $(grep -wo "$IP" "$WWW_SAS_BAN_LIST") ]]
     then
-	    printf 'The IP address %s belongs to our Banlist, but there is not Iptables rule!\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG" && MAIL_FLAG='TYPE_2'
+	    printf 'The IP address %s belongs to our BanList, but there is not Iptables rule!\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG" && MAIL_FLAG='TYPE_2'
     fi
 
     # Get the number of the previous transgressions from this $IP and increment +1 to get the current number;
@@ -231,10 +231,10 @@ then
 
         if [[ -z $(grep -o "$IP" "$WWW_SAS_BAN_LIST") ]]
         then
-            printf 'On %-10s at %-8s | This IP was added to the Banist by @%s: %-18s\t Due to an analyse, provided by @%s\n' "$DATE" "$TIME" "$AGENT" "$IP" "$WWW_SAS_ABUSEIPDB_FULL" | tee -a "$WWW_SAS_BAN_LIST"
+            printf 'On %-10s at %-8s | This IP was added to the BanList by @%s: %-18s\t Due to an analyse, provided by @%s\n' "$DATE" "$TIME" "$AGENT" "$IP" "$WWW_SAS_ABUSEIPDB_FULL" | tee -a "$WWW_SAS_BAN_LIST"
         fi
 
-        ACTION_SPECIFFIC_MESSAGE="$(printf 'Due to an analyse, provided by @%s, they <i>was added to the Banlist</i> on %s at %s!' "$WWW_SAS_ABUSEIPDB_FULL" "$DATE" "$TIME")"
+        ACTION_SPECIFFIC_MESSAGE="$(printf 'Due to an analyse, provided by @%s, they <i>was added to the BanList</i> on %s at %s!' "$WWW_SAS_ABUSEIPDB_FULL" "$DATE" "$TIME")"
 
         if [[ ! -z $AbuseIPDB_APIKEY ]]
         then
@@ -256,10 +256,10 @@ then
 
         if [[ -z $(grep -o "$IP" "$WWW_SAS_BAN_LIST") ]]
         then
-            printf 'On %-10s at %-8s | This IP was added to the Banist by @%s: %-18s\n' "$DATE" "$TIME" "$AGENT" "$IP" | tee -a "$WWW_SAS_BAN_LIST"
+            printf 'On %-10s at %-8s | This IP was added to the BanList by @%s: %-18s\n' "$DATE" "$TIME" "$AGENT" "$IP" | tee -a "$WWW_SAS_BAN_LIST"
         fi
 
-        ACTION_SPECIFFIC_MESSAGE="$(printf 'They reached our limit of tolerance and <i>was added to the Banlist</i> on %s at %s!' "$DATE" "$TIME")"
+        ACTION_SPECIFFIC_MESSAGE="$(printf 'They reached our limit of tolerance and <i>was added to the BanList</i> on %s at %s!' "$DATE" "$TIME")"
 
         if [[ ! -z $AbuseIPDB_APIKEY ]]
         then
@@ -445,7 +445,7 @@ else
 
     printf "\n<p class=\"red\">To allow access of this IP address from the command line, use one of the following commands:</p>"
     printf "\n<pre class=\"red\">\nsudo iptables -D $WWW_SAS_IPTBL_CHAIN -s %s -j DROP\nsudo %s %s --CLEAR 'notes'\n</pre>\n" "$IP" "$WWW_SAS" "$IP"
-    printf "\n<p class=\"grey\">To add this IP address to our Whitelist execute:</p>"
+    printf "\n<p class=\"grey\">To add this IP address to our WhiteList execute:</p>"
     printf "\n<pre class=\"grey\">\nsudo %s %s --ACCEPT 'notes'\nsudo %s %s --ACCEPT-CHAIN 'notes'</pre>\n" "$WWW_SAS" "$IP" "$WWW_SAS" "$IP"
 
     if [[ $AGENT == "$AGENT_MODSEC" ]]
