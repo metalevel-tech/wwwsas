@@ -1,0 +1,834 @@
+#!/bin/bash
+
+# $1 - 'branch' (default: master) of https://github.com/pa4080/www-security-assistant
+# $2 - 'full-access' (default: unset) with this option set some additional things will be done, that are not accessible on some virtualizations as OpenVZ.
+
+
+# -------------------------------------------------------------------------
+# Check the dependencies, almost all of them should be installed by default
+# -------------------------------------------------------------------------
+
+[[ -x /bin/nano ]] || { echo "Please, install 'nano'"; exit 0; }
+[[ -x /usr/bin/at ]] || { echo "Please, install 'at'"; exit 0; }
+[[ -x /usr/bin/tee ]] || { echo "Please, install 'tee'"; exit 0; }
+[[ -x /usr/bin/awk ]] || { echo "Please, install 'awk'"; exit 0; }
+[[ -x /usr/bin/who ]] || { echo "Please, install 'who'"; exit 0; }
+[[ -x /usr/bin/find ]] || { echo "Please, install 'find'"; exit 0; }
+[[ -x /usr/bin/mail ]] || { echo "Please, install 'mail' command"; exit 0; }
+[[ -x /usr/bin/git ]] || { echo "Please, install 'git'"; exit 0; }
+[[ -x /usr/bin/mail ]] || { echo "Please, install 'pstfix' or some similar package. Your system should ne able to send emails via the command 'mail'"; exit 0; }
+[[ -x /usr/bin/colordiff ]] || { echo "Please, install 'colordiff'"; exit 0; }
+[[ -x /usr/bin/wget ]] || { echo "Please, install 'wget'"; exit 0; }
+[[ -x /sbin/iptables ]] || { echo "Please, install 'iptables'"; exit 0; }
+
+# Construct the DIFF command
+DIFF='/usr/bin/colordiff --side-by-side --left-column --width=180 --show-c-function'
+DIFF_TEST='/usr/bin/colordiff -c'
+
+
+# ---------------------------------------------------
+# Read the user's input and initial environment setup
+# ---------------------------------------------------
+
+# The script should be run as root
+[[ "$EUID" -ne 0 ]] && { echo "Please run as root (use sudo)."; exit 0; }
+
+# Which branch to be pulled
+[[ -z ${1+x} ]] && BRANCH='master' || BRANCH="${1}"
+
+# Basic envvars
+WORK_DIR="/etc/www-security-assistant"
+CURRENT_DIR="$(pwd)"
+CONF_FILE="${CURRENT_DIR}/www-security-assistant.conf"
+
+# Backup and clear or create a log file :: ${0%.*}.log
+LOG_FILE="${0}.log"
+
+[[ -f $LOG_FILE ]] && cp "$LOG_FILE"{,.bak}
+>"$LOG_FILE"
+
+# Installer version
+INSTALLER_VERSION='v.5.0'
+
+# Output colors
+RED='\033[0;31m'
+GRE='\033[0;32m'
+YEL='\033[1;33m'
+NCL='\033[0m' 
+
+
+# ---------------
+# Output a legend
+# ---------------
+
+echo "The full syntax of the command is:"
+echo -e "\n${GRE}sudo ./SETUP 'branch-name' 'full-access'${NCL} # Where 'full-access' is not available in OpenVZ\n"
+
+
+# -----------------------------------------------------------------------
+# Functions section BEGIN
+
+# This is the actual installation dialogue that is executed for each file
+create_local_file() {
+ 	echo -e "\n${RED}>> $DEST_FILE ${NCL}"
+
+	if [[ -f $DEST_FILE ]]
+	then
+		if [[ -z $(eval "$DIFF_TEST" "$DEST_FILE" "$SRCE_FILE") ]]
+		then
+			echo -e "\n${GRE}>> There are no differences between:\n"
+			echo -e "\t   \t$DEST_FILE"
+			echo -e "\tand\t${SRCE_FILE}${NCL}\n"
+			MSG_DIFFERENCES="There are no difference."
+		else
+			echo
+			eval "$DIFF" "$DEST_FILE" "$SRCE_FILE"
+
+			echo -e "\n${GRE}>> Above is the output of:\n"
+			echo -e "\t${YEL}$DIFF \\"
+			echo -e "\t\t$DEST_FILE \\"
+			echo -e "\t\t${SRCE_FILE}${NCL}\n"
+			MSG_DIFFERENCES="\nMaybe you should apply some changes manually. Use the following command to find the differences:\n\t$DIFF '$DEST_FILE' '$SRCE_FILE'"
+		fi
+		DEFAULT_INPUT='No'
+		QUESTION="${GRE}Do you want to override ${YEL}'${DEST_FILE}'${GRE}?${NCL} ${RED}[$DEFAULT_INPUT]${NCL} [Yes][No]:"
+	else
+		MSG_DIFFERENCES="Or it is not created."
+		DEFAULT_INPUT='Yes'
+		QUESTION="\n${GRE}Do you want to create '${YEL}${DEST_FILE}'${GRE}? [$DEFAULT_INPUT]${NCL} [Yes][No]:"
+	fi
+
+	read -rp "$(echo -e "${QUESTION}") " INPUT
+	if [[ -z ${INPUT} ]]; then INPUT="$DEFAULT_INPUT"; fi
+
+	echo -e "Accepted input: ${INPUT^}"
+
+	if [[ $INPUT == [yY] || $INPUT == [yY][eE][sS] ]] && [[ $VISUDO == 'YES' ]]
+	then
+		cp "$SRCE_FILE" "$DEST_FILE" && echo -e "\nThe file '$DEST_FILE' was created. Please review and tweak the parameters inside." | tee -a "$LOG_FILE"
+	elif [[ $INPUT == [yY] || $INPUT == [yY][eE][sS] ]]
+	then
+		[[ -f $DEST_FILE ]] && cp "${DEST_FILE}"{,.bak} && echo -e "\nThe file '${DEST_FILE}.bak' was created." | tee -a "$LOG_FILE"
+		cp "$SRCE_FILE" "$DEST_FILE" && echo -e "\nThe file '$DEST_FILE' was created. Please review and tweak the parameters inside." | tee -a "$LOG_FILE"
+	else
+		if [[ -f $DEST_FILE ]]
+		then
+			echo -e "\nThe existing file '$DEST_FILE' was kept. $MSG_DIFFERENCES" | tee -a "$LOG_FILE"
+		else
+			echo -e "\nThe file '$DEST_FILE' is not created." | tee -a "$LOG_FILE"
+		fi
+	fi
+
+	# Edit the destination file
+	if  [[ -f $DEST_FILE ]] && [[ $VISUDO == 'YES' ]]
+	then
+		DEFAULT_INPUT='Yes'
+		QUESTION="\n${RED}You must open and (re)save '${DEST_FILE}' with 'visudo' to confirm there is not a problem! Edit? ${NCL} ${GRE}[$DEFAULT_INPUT]${NCL} [Yes][No]:"
+
+		read -rp "$(echo -e "${QUESTION}") " INPUT
+		if [[ -z ${INPUT} ]]; then INPUT="$DEFAULT_INPUT"; fi
+
+		echo -e "Accepted input: ${INPUT^}"
+
+		if [[ $INPUT == [yY] || $INPUT == [yY][eE][sS] ]]
+		then
+			visudo -f "$DEST_FILE"
+			read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+		fi
+	elif  [[ -f $DEST_FILE ]]
+	then
+		DEFAULT_INPUT='No'
+		QUESTION="\n${NCL}Do you want to edit ${YEL}'${DEST_FILE}'${NCL}?${NCL} ${RED}[$DEFAULT_INPUT]${NCL} [Yes][No]:"
+
+		read -rp "$(echo -e "${QUESTION}") " INPUT
+		if [[ -z ${INPUT} ]]; then INPUT="$DEFAULT_INPUT"; fi
+
+		echo -e "Accepted input: ${INPUT^}"
+
+		if [[ $INPUT == [yY] || $INPUT == [yY][eE][sS] ]]
+		then
+			nano "$DEST_FILE"
+			read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+		fi
+	fi
+
+	unset VISUDO
+}
+
+# Replace strings during the configuration
+replace_string() {
+	# $1 - DEFAULT
+	# $2 - REPLACEMENT
+
+	echo -ne "${YEL}"
+	echo -e "\nThe following files will be modified:\n" | tee -a "$LOG_FILE"
+	printf '\t%s\n' $(grep -rl --exclude=README* --exclude=*index* --exclude=setup* --exclude=*local --exclude=.gitignore --exclude-dir=.git "${1}" | sort -u) | tee -a "$LOG_FILE"
+	echo -e "\nYou must agree, you shouldn't use 'git push' with such modifications!\n" | tee -a "$LOG_FILE"
+	echo -ne "${NCL}"
+	read -rp "$(echo -e "${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+	grep -rlZ --exclude=README* --exclude=*index* --exclude=SETUP* --exclude=*local --exclude=.gitignore --exclude-dir=.git "${1}" | xargs -0 sed "s#${1}#${2}#g" -i
+}
+
+# Link some of our executable files to /usr/local/bin
+create_shell_command() {
+	# $1 - the source - executable file (usually located in $WORK_DIR)
+	# $2 - the symbolic link (to /usr/local/bin) name
+	if [[ -L "/usr/local/bin/${2}" ]]
+	then
+		rm -f "/usr/local/bin/${2}"
+		ln -s "${1}" "/usr/local/bin/${2}"
+		echo -e "\nThe symbolic link '/usr/local/bin/${2}' was recreated." | tee -a "$LOG_FILE"
+	else
+		ln -s "${1}" "/usr/local/bin/${2}"
+		echo -e "\nThe symbolic link '/usr/local/bin/${2}' was created." | tee -a "$LOG_FILE"
+	fi
+
+	echo -e "'${1}' is accessible as the shell command:" | tee -a "$LOG_FILE"
+	echo -ne "${YEL}"
+	echo -e "${2}" | tee -a "$LOG_FILE"
+	echo -ne "${NCL}"
+}
+
+# Used in the environment setup process
+environment_setup() {
+	# $1 - default value
+	# $2 - an unique message for this value
+	# $3 - new value, currently (and should be) used for the working directory setup only
+
+	echo -e "\n${GRE}>>${NCL}"
+
+	if [[ -z ${3} ]]
+	then
+		echo -e "\nBy default '${YEL}${1}${NCL}' will be used as '${2}'${NCL}.\n"
+
+	    read -rp "$(echo -e "${GRE}Press [Enter] if you want to use '${1}' as '${2}'. ${RED}Or enter another value and press [Enter]: ${NCL}")" INPUT
+
+	    if [[ -z ${INPUT} ]]
+		then
+			INPUT="${1}"
+		fi
+	elif [[ ${1} == "${3}" ]]
+	then
+		echo -e "\nBy default '${YEL}${1}${NCL}' is used as '${2}'${NCL}. Currently we are inside this default directory '${YEL}${3}${NCL}'.\n"
+
+	    read -rp "$(echo -e "${GRE}Press [Enter] if you want to use '${3}' as '${2}'. ${RED}Or [Ctrl+C] to interupt the process. ${NCL}")" INPUT
+
+	    if [[ -z ${INPUT} ]]
+		then
+			INPUT="${3}"
+		else
+			exit 0
+		fi
+	else
+		echo -e "\nBy default '${YEL}${1}${NCL}' is used as '${2}'${NCL}. Currently we are inside '${YEL}${3}${NCL}'.\n"
+
+	    read -rp "$(echo -e "${GRE}Press [Enter] if you want to use '${3}' as '${2}'. ${RED}Or [Ctrl+C] to interupt the process. ${NCL}")" INPUT
+
+	    if [[ -z ${INPUT} ]]
+		then
+			INPUT="${3}"
+		else
+			exit 0
+		fi
+	fi
+
+	echo -e "\nAccepted input: '${INPUT}' will be used as '${2}'" | tee -a "$LOG_FILE"
+
+	if [[ $INPUT != "${1}" ]]
+	then
+		replace_string "${1}" "$INPUT"
+	fi
+}
+
+# https://stackoverflow.com/questions/10775863/best-way-to-check-if-a-iptables-userchain-exist
+iptables_chain_exists() {
+    iptables -n --list "$1" >/dev/null 2>&1
+}
+
+# Functions section END
+# -----------------------------------------------------------------------
+
+
+# --------------------
+# The initial dialogue
+# --------------------
+echo -e "${RED}"; echo -e "\n\n*** Confirm the installation (update) policies *****\n" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+echo -e "Please consider, this installation script will override all files," | tee -a "$LOG_FILE"
+echo -e "within the current directory, that are not listed in the '.gitignore' file." | tee -a "$LOG_FILE"
+echo -ne "${YEL}"; echo -e "Your personal data (*.conf, *.log, *.local, *.php, etc.) will be kept!" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+echo -e "The installer will checkout the '${YEL}${BRANCH}${NCL}' branch of WWW Security Assistant." | tee -a "$LOG_FILE"
+echo -e "For more information: https://github.com/pa4080/www-security-assistant" | tee -a "$LOG_FILE"
+echo -ne "${YEL}"; echo -e "If you want to checkout another branch, use: sudo ${0} '<branch-name>'" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+DEFAULT_INPUT='Yes'
+QUESTION="\n${GRE}Do you agree? [$DEFAULT_INPUT]${NCL} [Yes][No]:"
+
+read -rp "$(echo -e "${QUESTION}") " INPUT
+if [[ -z ${INPUT} ]]; then INPUT="$DEFAULT_INPUT"; fi
+
+echo -e "Accepted input: ${INPUT^}\n"
+
+if [[ $INPUT == [yY] || $INPUT == [yY][eE][sS] ]]
+then
+	echo -e "${YEL}git fetch && git stash && git checkout $BRANCH && git pull${NCL}\n"
+        git stash
+		git fetch --all
+		git reset --hard FETCH_HEAD
+		git clean -df        
+        git checkout "$BRANCH"
+        git pull --all
+	echo -e "\nThe '$BRANCH' branch of WWW Security Assistant was pulled." >> "$LOG_FILE"
+else
+	exit 0
+fi
+
+
+# ---------------------------
+# Check the installer version
+# ---------------------------
+echo -e "${RED}"; echo -e "\n\n*** Check of the installer version *****\n" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+INSTALLER_VERSION_NEW="$(sed -r -n "s/^INSTALLER_VERSION='(.*)'$/\1/p" "${0}")"
+
+if [[ $INSTALLER_VERSION != "$INSTALLER_VERSION_NEW" ]]
+then
+        echo "A new version of the Installer is deployed. Please run ./SETUP again!" | tee -a "$LOG_FILE"
+		echo -e "\nBranch: $BRANCH\nInstaller version (new): $INSTALLER_VERSION_NEW\nInstaller version (old): $INSTALLER_VERSION\n" | tee -a "$LOG_FILE"
+        exit 0
+else
+		echo -e "\nBranch: $BRANCH\nInstaller version (new): $INSTALLER_VERSION_NEW\nInstaller version (old): $INSTALLER_VERSION\n" | tee -a "$LOG_FILE"
+        echo "The version coincides." | tee -a "$LOG_FILE"
+fi
+
+
+# ------------------------------
+# Environment setup section
+# ------------------------------
+echo -e "${RED}"; echo -e "\n\n*** Environment setup *****\n" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+# Previous installation detection
+WORK_DIR_PREVIOUS_INSTALLATION="$([[ -f $CONF_FILE ]] && sed -nr "s/WORK_DIR='(.*)'/\1/p" "$CONF_FILE")"
+
+if [[ -z $WORK_DIR_PREVIOUS_INSTALLATION ]]
+then
+	source "${CONF_FILE}.example"
+
+	echo -ne "${YEL}"
+	echo -e "\nNOTE: This is a new installation. The file '$CONF_FILE' doesn't exist. We should define the environment variables." | tee -a "$LOG_FILE"
+	echo -e "      We will use '${CONF_FILE}.example' to set the initial values of the envvars." | tee -a "$LOG_FILE"
+	echo -ne "${NCL}"
+
+	# --------------------------
+	# Get the user's preferences
+	# --------------------------
+
+	# -- Define the working directory -----
+	environment_setup "$WORK_DIR" "Working directory" "$CURRENT_DIR"
+	WORK_DIR="$INPUT"
+
+	# -- Define Apaches's log directory -----
+	environment_setup "$APACHE_LOG_DIR" "Apache's log directory"
+	APACHE_LOG_DIR="$INPUT"
+
+	# -- Define ModEvasive's log directory -----
+	environment_setup "$MOD_EVASIVE_LOG_DIR" "ModEvasive's log directory"
+	MOD_EVASIVE_LOG_DIR="$INPUT"
+
+	# -- Define ModSecurity's log directory -----
+	environment_setup "$MOD_SECURITY_LOG_DIR" "ModSecurity's log directory"
+	MOD_SECURITY_LOG_DIR="$INPUT"
+
+	# -- Define OWASP CRS ModSecurity's installation directory -----
+	environment_setup "$MOD_SECURITY_OWASP_CRS_DIR" "Installation directory of OWASP ModSecurity CRS"
+	MOD_SECURITY_OWASP_CRS_DIR="$INPUT"
+
+	# -- Define the URI where ModSecurity will redirect the bad guys -----
+	# :: Within the ModSecurity's rules can be used FQDN (URL), but we need URI because of the next steps of the installation process
+	environment_setup "$MOD_SECURITY_ISSUES_PAGE" "URI where ModSecurity will redirect the bad guys"
+	MOD_SECURITY_ISSUES_PAGE="$INPUT"
+
+	source "${CONF_FILE}.example"
+
+elif [[ -n $WORK_DIR_PREVIOUS_INSTALLATION ]] && [[ $CURRENT_DIR == "$WORK_DIR_PREVIOUS_INSTALLATION" ]]
+then
+	source "${CONF_FILE}"
+
+	echo -ne "${YEL}"
+	echo -e "NOTE: This is an update. The file '${CONF_FILE}' exists and we will use it." | tee -a "$LOG_FILE"
+	echo -e "      If you want to change the environment setup, Determinate the process by [Ctrl+C]." | tee -a "$LOG_FILE"
+	echo -e "      Edit the configuration file:\n\t\t $CONF_FILE" | tee -a "$LOG_FILE"
+	echo -e "      Or move it as local copy by using:\n\t\t sudo mv \"${CONF_FILE}\"{,.local}" | tee -a "$LOG_FILE"
+	echo -e "      Then start the setup process again." | tee -a "$LOG_FILE"
+	echo -ne "${NCL}"
+
+	read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+else
+	echo -e "${YEL}"
+	echo -e "\nSOMETHING WENT WRONG!!! CHECK THE SCRIPTS!!!\n" | tee -a "$LOG_FILE"
+	echo -e "${NCL}"
+	exit 0
+fi
+
+
+# -------------------------------------------------------------------------
+# Create local files based on the .example files for the main script bundle
+# -------------------------------------------------------------------------
+echo -e "${RED}"; echo -e "\n\n*** Setup (update) WWW Security Assistant Configuration *****\n" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+echo -ne "Create (update) local .conf files based on the .example files... " | tee -a "$LOG_FILE"
+read -rp "$(echo -e "${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+
+for EXAMPLE_FILE in "${WORK_DIR}"/*.example
+do
+	SRCE_FILE="${EXAMPLE_FILE}"
+	DEST_FILE="${EXAMPLE_FILE%.example}"
+	create_local_file
+done
+
+
+# ----------------------------------
+# Link our scripts as shell commands
+# ----------------------------------
+echo -e "${RED}"; echo -e "\n\n*** Create shell commands *****" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+create_shell_command "$WWW_SAS_EXEC" "$WWW_SAS"
+create_shell_command "$WWW_SAS_MOD_SECURITY_WLRG_EXEC" "$WWW_SAS_MOD_SECURITY_WLRG"
+create_shell_command "$WWW_SAS_FLOOD_DETECTOR_EXEC" "$WWW_SAS_FLOOD_DETECTOR"
+create_shell_command "$WWW_SAS_POST_ANALYSE_EXEC" "$WWW_SAS_POST_ANALYSE"
+create_shell_command "$WWW_SAS_ABUSEIPDB_EXEC" "$WWW_SAS_ABUSEIPDB"
+
+create_shell_command "$WWW_SAS_IPTABLES_SAVE" "wwwsas-iptables-save"
+create_shell_command "$WWW_SAS_IPTABLES_RESTORE" "wwwsas-iptables-restore"
+
+read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+
+
+# --------------------------------------------------------------------------------------------------------------------------------
+# Touch some additional files grant permissions to www-data to write logs and execute the main script; create custom tmp directory
+# -------------------------------------------------------------------------------------------------------------------------------
+echo -e "${RED}"; echo -e "\n\n*** Create few emty *.log, *.list and *.history files *****\n" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+mkdir -p "$WWW_SAS_TMP"
+chown www-data "$WWW_SAS_TMP"
+echo -e "The following directories has ben created:" | tee -a "$LOG_FILE"
+printf '\t%s\n' "$WWW_SAS_TMP" | tee -a "$LOG_FILE"
+
+touch "$WWW_SAS_EXEC_LOG" "$WWW_SAS_ERROR_LOG" "$WWW_SAS_HISTORY" "$WWW_SAS_WHITE_LIST" "$WWW_SAS_BAN_LIST" "$WWW_SAS_BAN_CLEAR_LIST"
+echo -e "The following files has ben 'touch'-ed:" | tee -a "$LOG_FILE"
+printf '\t%s\n' "$WWW_SAS_EXEC_LOG" "$WWW_SAS_ERROR_LOG" "$WWW_SAS_HISTORY" "$WWW_SAS_WHITE_LIST" "$WWW_SAS_BAN_LIST" "$WWW_SAS_BAN_CLEAR_LIST" | tee -a "$LOG_FILE"
+
+read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+
+
+# -------------------------
+# Setup flood-detector.bash
+# -------------------------
+echo -e "${RED}"; echo -e "\n\n*** Create 'crontab' entry for 'flood-detector.bash' *****" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+SRCE_FILE="${WORK_DIR}/file-system/etc/cron.d/wwwsas-flood-detector.example"
+DEST_FILE="/etc/cron.d/wwwsas-flood-detector"
+create_local_file
+
+read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+
+
+# -------------------------
+# Setup post-analyse.bash
+# -------------------------
+echo -e "${RED}"; echo -e "\n\n*** Create 'crontab' entry for 'post-analyse.bash' *****" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+SRCE_FILE="${WORK_DIR}/file-system/etc/cron.d/wwwsas-post-analyse.example"
+DEST_FILE="/etc/cron.d/wwwsas-post-analyse"
+create_local_file
+
+read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+
+
+# --------------------------------------
+# Install the necessary Apache's modules
+# --------------------------------------
+echo -e "${RED}"; echo -e "\n\n*** Install the necessary Apache's modules *****\n" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+if [[ -z $WORK_DIR_PREVIOUS_INSTALLATION ]]
+then
+	echo -e "NOTE: This is a new installation. We will proceed this step." | tee -a "$LOG_FILE"
+
+	COMMAND_TO_PERFORM_1='apt install libapache2-mod-evasive'
+	COMMAND_TO_PERFORM_2='apt install libapache2-modsecurity libapache2-mod-security2 && apt purge modsecurity-crs'
+	COMMAND_TO_PERFORM_3='a2enmod headers rewrite expires unique_id evasive security2'
+
+	echo "The installation script will force install and enable a couple of Apache's modules:"
+	echo -e "\n${YEL}\t$COMMAND_TO_PERFORM_1\n\t$COMMAND_TO_PERFORM_2\n\t$COMMAND_TO_PERFORM_3${NCL}"
+
+	DEFAULT_INPUT='Yes'
+	QUESTION="\n${GRE}Do you agree? [$DEFAULT_INPUT]${NCL} [Yes][No]:"
+
+	read -rp "$(echo -e "${QUESTION}") " INPUT
+	if [[ -z ${INPUT} ]]; then INPUT="$DEFAULT_INPUT"; fi
+
+	echo -e "Accepted input: ${INPUT^}\n"
+
+	if [[ $INPUT == [yY] || $INPUT == [yY][eE][sS] ]]
+	then
+		eval "$COMMAND_TO_PERFORM_1"
+		echo ""
+		eval "$COMMAND_TO_PERFORM_2"
+		echo ""
+		eval "$COMMAND_TO_PERFORM_3"
+		echo -e "\nThe following commands were executed:\n\t\t$COMMAND_TO_PERFORM_1\n\t\t$COMMAND_TO_PERFORM_2\n\t\t$COMMAND_TO_PERFORM_3" >> "$LOG_FILE"
+	else
+		read -rp "These packages are essential for the current script bundle, please confirm they are installed. Press [Enter] to continue..."
+		echo -e "\nPlease check does these Apache's modules are enabled:\n\tsudo $COMMAND_TO_PERFORM_2" >> "$LOG_FILE"
+	fi
+else
+	echo -e "NOTE: This is an update. We have skipped this step." | tee -a "$LOG_FILE"
+fi
+
+read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+
+
+# ----------------------------------------------------
+# Setup ModSecurity; Install OWASP ModSecurity CRS 3.x
+# ----------------------------------------------------
+echo -e "${RED}"; echo -e "\n\n*** Install OWASP ModSecurity Core Rule Set 3.x *****" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+if [[ -z $WORK_DIR_PREVIOUS_INSTALLATION ]]
+then
+	echo -e "\nNOTE: This is a new installation. We will install OWASP ModSecurity CRS 3.x." | tee -a "$LOG_FILE"
+
+	echo -e "The setup script will clone the '${YEL}default/latest branch${NCL}' of OWASP ModSecurity Core Rule Set,"
+	echo -e "in the directory '${YEL}${MOD_SECURITY_OWASP_CRS_DIR}${NCL}'."
+	echo -e "For more information go to: https://coreruleset.org/installation/"
+
+	if [[ -d $MOD_SECURITY_OWASP_CRS_DIR ]]
+	then
+		echo -e "\nThe directory '$MOD_SECURITY_OWASP_CRS_DIR' already exists." | tee -a "$LOG_FILE"
+		echo -e "If you want to update the repository on your own go inside and use 'git'" | tee -a "$LOG_FILE"
+		echo -e "For more information go to: https://coreruleset.org/installation/" | tee -a "$LOG_FILE"
+	else
+		git clone "https://github.com/SpiderLabs/owasp-modsecurity-crs.git" "$MOD_SECURITY_OWASP_CRS_DIR"
+
+		echo -e "\nOWASP ModSecurity CRS 3.x is cloned." | tee -a "$LOG_FILE"
+		echo -e "The following command was executed:\t git clone 'https://github.com/SpiderLabs/owasp-modsecurity-crs.git' '$MOD_SECURITY_OWASP_CRS_DIR'" >> "$LOG_FILE"
+		echo -e "For more information go to: https://coreruleset.org/installation/" >> "$LOG_FILE"
+	fi
+else
+	echo -e "\nNOTE: This is an update. We have skipped this step." | tee -a "$LOG_FILE"
+
+	if [[ -d $MOD_SECURITY_OWASP_CRS_DIR ]]
+	then
+		echo -e "\nThe directory '$MOD_SECURITY_OWASP_CRS_DIR' already exists." | tee -a "$LOG_FILE"
+		echo -e "If you want to update the repository on your own go inside and use 'git'" | tee -a "$LOG_FILE"
+		echo -e "For more information go to: https://coreruleset.org/installation/" | tee -a "$LOG_FILE"
+	else
+		echo -e "\nThe directory '$MOD_SECURITY_OWASP_CRS_DIR' doesn't exist. Something is wrong with your setup." | tee -a "$LOG_FILE"
+		echo -e "Use the following command before to proceed:\t git clone 'https://github.com/SpiderLabs/owasp-modsecurity-crs.git' '$MOD_SECURITY_OWASP_CRS_DIR'" >> "$LOG_FILE"
+		echo -e "For more information go to: https://coreruleset.org/installation/" >> "$LOG_FILE"
+	fi
+fi
+
+read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+
+
+# ------------
+# Setup Apache
+# ------------
+echo -e "${RED}"; echo -e "\n\n*** Setup Apache *****\n" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+echo -e "Check (create):\t $APACHE_LOG_DIR\n" | tee -a "$LOG_FILE"
+[[ ! -d $APACHE_LOG_DIR ]] && mkdir -p "$APACHE_LOG_DIR"
+
+chown www-data "$WWW_SAS_EXEC_LOG" 
+chown www-data "$WWW_SAS_ERROR_LOG"
+echo -e "'www-data' is able to write in the following files: $WWW_SAS_EXEC_LOG $WWW_SAS_ERROR_LOG\n"| tee -a "$LOG_FILE"
+
+echo -ne "${YEL}"
+echo -e "Create the following file to allow 'www-data' to execute 'www-security-assistant.bash' by 'sudo' without password." | tee -a "$LOG_FILE"
+echo -ne "${NCL}"
+
+VISUDO='YES'
+SRCE_FILE="${WORK_DIR}/file-system/etc/sudoers.d/wwwsas-www-data-exec.example"
+DEST_FILE="/etc/sudoers.d/wwwsas-www-data-exec"
+create_local_file
+
+echo -ne "\nCreate (update) local .conf files based on the .example files... " | tee -a "$LOG_FILE"
+read -rp "$(echo -e "${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+
+# Create local template for Apache2 (apache2.conf)...
+SRCE_FILE="${WORK_DIR}/file-system/etc/apache2/apache2.conf.template"
+DEST_FILE="/etc/apache2/apache2.conf.template"
+create_local_file
+
+# ...compare or/and apply the changes to the real conf file
+SRCE_FILE="/etc/apache2/apache2.conf.template"
+DEST_FILE="/etc/apache2/apache2.conf"
+create_local_file
+
+# Create local template for MediaWiki
+SRCE_FILE="${WORK_DIR}/file-system/etc/apache2/sites-available/mediawiki.conf.template"
+DEST_FILE="/etc/apache2/sites-available/mediawiki.conf.template"
+create_local_file
+
+# Create local template for WordPress
+SRCE_FILE="${WORK_DIR}/file-system/etc/apache2/sites-available/wordpress.conf.template"
+DEST_FILE="/etc/apache2/sites-available/wordpress.conf.template"
+create_local_file
+
+read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+
+
+# ----------------
+# Setup ModEvasive
+# ----------------
+echo -e "${RED}"; echo -e "\n\n*** Setup ModEvasive *****\n" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+echo -e "Check (create):\t $MOD_EVASIVE_LOG_DIR" | tee -a "$LOG_FILE"
+[[ ! -d $MOD_EVASIVE_LOG_DIR ]] && mkdir -p "$MOD_EVASIVE_LOG_DIR"
+[[ ! -d $MOD_EVASIVE_LOG_DIR_BAK ]] && mkdir -p "$MOD_EVASIVE_LOG_DIR_BAK"
+
+chown www-data "$MOD_EVASIVE_LOG_DIR" "$MOD_EVASIVE_LOG_DIR_BAK"
+echo -e "'www-data' is able to write in the following directories: ${MOD_EVASIVE_LOG_DIR}, ${MOD_EVASIVE_LOG_DIR_BAK}\n"| tee -a "$LOG_FILE"
+
+echo -ne "\nCreate (update) local .conf files based on the .example files... " | tee -a "$LOG_FILE"
+read -rp "$(echo -e "${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+
+SRCE_FILE="${WORK_DIR}/file-system/etc/apache2/mods-available/evasive.conf.example"
+DEST_FILE="/etc/apache2/mods-available/evasive.conf"
+create_local_file
+
+echo -e "\n!!! You should whitelist your server's IP(s) in the above file !!!\n" | tee -a "$LOG_FILE"
+
+read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+
+
+# -----------------
+# Setup ModSecurity
+# -----------------
+echo -e "${RED}"; echo -e "\n\n*** Setup ModSecurity *****\n" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+echo -e "Check (create):\t $MOD_SECURITY_LOG_DIR\n" | tee -a "$LOG_FILE"
+
+[[ ! -d $MOD_SECURITY_LOG_DIR ]] && { mkdir -p "$MOD_SECURITY_LOG_DIR"; touch "$MOD_SECURITY_LOG_DIR"/modsec_audit.log{,.1}; }
+
+if [[ -z $WORK_DIR_PREVIOUS_INSTALLATION ]]
+then
+	echo -e "\nNOTE: This is a new installation. We will create a default .conf files." | tee -a "$LOG_FILE"
+
+	SRCE_FILE="/etc/modsecurity/modsecurity.conf-recommended"
+	DEST_FILE="/etc/modsecurity/modsecurity.conf"
+	create_local_file
+
+	SRCE_FILE="${MOD_SECURITY_OWASP_CRS_DIR}/crs-setup.conf.example"
+	DEST_FILE="${MOD_SECURITY_OWASP_CRS_DIR}/crs-setup.conf"
+	create_local_file
+
+	SRCE_FILE="${MOD_SECURITY_OWASP_CRS_DIR}/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example"
+	DEST_FILE="${MOD_SECURITY_OWASP_CRS_DIR}/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf"
+	create_local_file
+
+	SRCE_FILE="${MOD_SECURITY_OWASP_CRS_DIR}/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.example"
+	DEST_FILE="${MOD_SECURITY_OWASP_CRS_DIR}/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf"
+	create_local_file
+fi
+
+echo -ne "\nCreate (update) local .conf files based on the .example files... " | tee -a "$LOG_FILE"
+read -rp "$(echo -e "${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+
+SRCE_FILE="${WORK_DIR}/file-system/etc/apache2/mods-available/security2.conf.example"
+DEST_FILE="/etc/apache2/mods-available/security2.conf"
+create_local_file
+
+SRCE_FILE="${WORK_DIR}/file-system/etc/modsecurity/modsecurity.conf.example"
+DEST_FILE="/etc/modsecurity/modsecurity.conf"
+create_local_file
+
+SRCE_FILE="${WORK_DIR}/file-system/etc/modsecurity/wwwsas-rules.conf.example"
+DEST_FILE="/etc/modsecurity/wwwsas-rules.conf"
+create_local_file
+
+echo -e "\n!!! You should whitelist your server's IP(s) in the above file !!!\n" | tee -a "$LOG_FILE"
+
+SRCE_FILE="${WORK_DIR}/file-system/etc/modsecurity/owasp-modsecurity-crs/crs-setup.conf.example"
+DEST_FILE="${MOD_SECURITY_OWASP_CRS_DIR}/crs-setup.conf"
+create_local_file
+
+SRCE_FILE="${WORK_DIR}/file-system/etc/modsecurity/owasp-modsecurity-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example"
+DEST_FILE="${MOD_SECURITY_OWASP_CRS_DIR}/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf"
+create_local_file
+
+SRCE_FILE="${WORK_DIR}/file-system/etc/modsecurity/owasp-modsecurity-crs/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.example"
+DEST_FILE="${MOD_SECURITY_OWASP_CRS_DIR}/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf"
+create_local_file
+
+SRCE_FILE="${WORK_DIR}/file-system/etc/logrotate.d/wwwsas-apache2-modsecurity2.example"
+DEST_FILE="/etc/logrotate.d/wwwsas-apache2-modsecurity2"
+create_local_file
+
+echo -e "\nSetup 'cronab' entry for GeoIPDB update:" | tee -a "$LOG_FILE"
+SRCE_FILE="${WORK_DIR}/file-system/etc/cron.d/wwwsas-modsec-geoipdb.example"
+DEST_FILE="/etc/cron.d/wwwsas-modsec-geoipdb"
+create_local_file
+
+echo -e "${YEL}"
+echo -e "\nCreate the local file '${WORK_DIR}/file-system/www/wwwsas.issues.php' based on the '.example' one. " | tee -a "$LOG_FILE"
+echo -e "The file '${WORK_DIR}/file-system/www/wwwsas.issues.php' is your posession and you can modify it as you wish." | tee -a "$LOG_FILE"
+echo -ne "${NCL}"
+
+SRCE_FILE="${WORK_DIR}/file-system/www/wwwsas.issues.php.example"
+DEST_FILE="${WORK_DIR}/file-system/www/wwwsas.issues.php"
+create_local_file
+
+if [[ -f ${WORK_DIR}/file-system/www/wwwsas.issues.php ]]
+then
+	echo -e "${YEL}"
+	echo -e "Create symbolic links of the file '${WORK_DIR}/file-system/www/wwwsas.issues.php'" | tee -a "$LOG_FILE"
+	echo -e "to each first level sub directory in '/var/www' where ModSecurity will redirect the bad guys.\n" | tee -a "$LOG_FILE"
+	echo -ne "${NCL}"
+
+	for i in /var/www/*/
+	do
+		[[ -L ${i}${MOD_SECURITY_ISSUES_PAGE##*/} ]] && rm -f "${MOD_SECURITY_ISSUES_PAGE##*/}"
+		[[ ! -L ${i}${MOD_SECURITY_ISSUES_PAGE##*/} ]] && ln -s "${WORK_DIR}/file-system/www/wwwsas.issues.php" "${i}${MOD_SECURITY_ISSUES_PAGE##*/}"
+	done
+
+	echo -e "The following symbolic links has been created:" | tee -a "$LOG_FILE"
+	printf "\t%s\n" $(find /var/www/ -maxdepth 2 -mindepth 2 -name "${MOD_SECURITY_ISSUES_PAGE##*/}") | tee -a "$LOG_FILE"
+fi
+
+
+read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+
+
+# ------------------------------------
+# Setup Iptables minimal configuration
+# ------------------------------------
+echo -e "${RED}"; echo -e "\n\n*** Iptables minimal configuration *****\n" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+if iptables_chain_exists "$WWW_SAS_IPTBL_CHAIN"
+then
+	echo -e "The 'iptables' chain '$WWW_SAS_IPTBL_CHAIN' already exists.\n" | tee -a "$LOG_FILE"
+	COMMAND_TO_PERFORM_1="iptables -L $WWW_SAS_IPTBL_CHAIN -n --line-numbers"
+	echo "$COMMAND_TO_PERFORM_1" | tee -a "$LOG_FILE"
+	eval "$COMMAND_TO_PERFORM_1"
+else
+	echo -e "# The 'iptables' chain '$WWW_SAS_IPTBL_CHAIN' is going to be created:" | tee -a "$LOG_FILE"
+	COMMAND_TO_PERFORM_1="iptables -N $WWW_SAS_IPTBL_CHAIN"
+	COMMAND_TO_PERFORM_2="iptables -A INPUT -j $WWW_SAS_IPTBL_CHAIN"
+	eval "$COMMAND_TO_PERFORM_1"
+	echo "$COMMAND_TO_PERFORM_1" | tee -a "$LOG_FILE"
+	eval "$COMMAND_TO_PERFORM_2"
+	echo "$COMMAND_TO_PERFORM_2" | tee -a "$LOG_FILE"
+fi
+
+if iptables -C INPUT -i lo -p all -j ACCEPT >/dev/null 2>&1; 
+then
+	echo -e "\nAccept loopback input - rule exist."
+else 
+	echo -e "\n# Add Accept loopback input rule:" | tee -a "$LOG_FILE"
+	COMMAND_TO_PERFORM_1="iptables -I INPUT 1 -i lo -p all -j ACCEPT"
+	echo "$COMMAND_TO_PERFORM_1" | tee -a "$LOG_FILE"
+	eval "$COMMAND_TO_PERFORM_1"
+fi
+
+if iptables -C INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT >/dev/null 2>&1; 
+then 
+	echo -e "\nAllow 3 way handshake - rule exist."
+else
+	echo -e "\n# Add Allow 3 way handshake input rule:" | tee -a "$LOG_FILE"
+	COMMAND_TO_PERFORM_1="iptables -I INPUT 2 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT"
+	echo "$COMMAND_TO_PERFORM_1" | tee -a "$LOG_FILE"
+	eval "$COMMAND_TO_PERFORM_1"
+fi
+
+echo -e "\n# Save the current 'iptables' state:" | tee -a "$LOG_FILE"
+eval "$WWW_SAS_IPTABLES_SAVE"
+echo "$WWW_SAS_IPTABLES_SAVE" | tee -a "$LOG_FILE"
+
+echo -e "${YEL}"
+echo -e "\nIf you haven't previously setup your system's firewall, review and edit the 'sh' script file" | tee -a "$LOG_FILE"
+echo -e "'iptables.basic-setup.local', then execute it by the command: sudo sh iptables.basic-setup.local" | tee -a "$LOG_FILE"
+echo -e "KEEP IN MIND:\nYou must check whether you are able to establish SSH connection before restart your system!" | tee -a "$LOG_FILE"
+echo -e "Because in the next step we will setup automatic save and restore mechanism for 'iptables'!" | tee -a "$LOG_FILE"
+echo -e "${NCL}"
+
+read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+
+
+# -----------------------------------------
+# Setup Iptables SAVE and RESTORE at REBOOT
+# -----------------------------------------
+echo -e "${RED}"; echo -e "\n\n*** Setup Iptables SAVE and RESTORE at REBOOT *****\n" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+DEFAULT_INPUT='Yes'
+QUESTION="${GRE}Do you want to setup Iptables SAVE and RESTORE at REBOO? The package 'ifupdown' will be automatically installed. [$DEFAULT_INPUT]${NCL} [Yes][No]:"
+
+read -rp "$(echo -e "${QUESTION}") " INPUT
+if [[ -z ${INPUT} ]]; then INPUT="$DEFAULT_INPUT"; fi
+
+echo -e "Accepted input: ${INPUT^}\n"
+
+if [[ $INPUT == [yY] || $INPUT == [yY][eE][sS] ]]
+then
+	apt install ifupdown
+	
+        [[ -L "/etc/network/if-post-down.d/000-iptables-save" ]] && rm -f "/etc/network/if-post-down.d/000-iptables-save"
+	[[ ! -L "/etc/network/if-post-down.d/000-iptables-save" ]] && ln -s "$WWW_SAS_IPTABLES_SAVE" "/etc/network/if-post-down.d/000-iptables-save"
+	echo -e "The following command was executed: ln -s '$WWW_SAS_IPTABLES_SAVE' '/etc/network/if-post-down.d/000-iptables-save'" | tee -a "$LOG_FILE"
+
+	[[ -L "/etc/network/if-pre-up.d/000-iptables-restore" ]] && rm -f "/etc/network/if-pre-up.d/000-iptables-restore"
+	[[ ! -L "/etc/network/if-pre-up.d/000-iptables-restore" ]] && ln -s "$WWW_SAS_IPTABLES_RESTORE" "/etc/network/if-pre-up.d/000-iptables-restore"
+	echo -e "The following command was executed: ln -s '$WWW_SAS_IPTABLES_RESTORE' '/etc/network/if-pre-up.d/000-iptables-restore'" | tee -a "$LOG_FILE"
+else
+	echo -e "Sure, you should setup Iptables SAVE and RESTORE at REBOO later!" | tee -a "$LOG_FILE"
+fi
+
+read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"
+
+
+# -----------------------------------------
+# Setup Ipset SAVE and RESTORE at REBOOT
+# -----------------------------------------
+echo -e "${RED}"; echo -e "\n\n*** Setup Ipset SAVE and RESTORE at REBOOT *****" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+if [[ ${2} == 'full-access' ]]
+then
+	if [[ -z $WORK_DIR_PREVIOUS_INSTALLATION ]] && [[ -x /sbin/ipset ]]; then apt install ipset; fi
+
+	DEFAULT_INPUT='Yes'
+	QUESTION="\n${GRE}Do you want to setup Ipset SAVE and RESTORE at REBOOT? [$DEFAULT_INPUT]${NCL} [Yes][No]:"
+
+	read -rp "$(echo -e "${QUESTION}") " INPUT
+	if [[ -z ${INPUT} ]]; then INPUT="$DEFAULT_INPUT"; fi
+
+	echo -e "Accepted input: ${INPUT^}\n"
+
+	if [[ $INPUT == [yY] || $INPUT == [yY][eE][sS] ]]
+	then
+		[[ -L "/etc/network/if-post-down.d/000-ipset-save" ]] && rm -f "/etc/network/if-post-down.d/000-ipset-save"
+		[[ ! -L "/etc/network/if-post-down.d/000-ipset-save" ]] && ln -s "${WORK_DIR}/ipset-save.sh" "/etc/network/if-post-down.d/000-ipset-save"
+		echo -e "The following command was executed: ln -s '${WORK_DIR}/ipset-save.sh' '/etc/network/if-post-down.d/000-ipset-save'" | tee -a "$LOG_FILE"
+
+		[[ -L "/etc/network/if-pre-up.d/000-ipset-restore" ]] && rm -f "/etc/network/if-pre-up.d/000-ipset-restore"
+		[[ ! -L "/etc/network/if-pre-up.d/000-ipset-restore" ]] && ln -s "${WORK_DIR}/ipset-restore.sh" "/etc/network/if-pre-up.d/000-ipset-restore"
+		echo -e "The following command was executed: ln -s '${WORK_DIR}/ipset-restore.sh' '/etc/network/if-pre-up.d/000-ipset-restore'" | tee -a "$LOG_FILE"
+	else
+		echo -e "Sure, you should setup Ipset SAVE and RESTORE at REBOOT later!" | tee -a "$LOG_FILE"
+	fi
+
+else
+	echo -e "\nTo achieve that, you must use: sudo ${0} '$BRANCH' 'full-access'" | tee -a "$LOG_FILE"
+fi
+
+# -------
+# THE END
+# -------
+echo -e "${RED}"; echo -e "\n\n*** The setup is almost done *****" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+
+echo -e "\nThe next steps are:\n" | tee -a "$LOG_FILE"
+echo -ne "${YEL}"
+echo -e "\t Read the log file carefully:\n\t\t nano ${0}.log\n" | tee -a "$LOG_FILE" 	# ${0%.*}.log
+echo -e "\t Examine the Apache's configuration and restart the service:\n\t\t sudo systemctl restart apache2.service" | tee -a "$LOG_FILE"
+echo -e "${NCL}"
+
+exit 0

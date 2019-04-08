@@ -1,0 +1,2 @@
+# This is workaround approach for iptables and ipset configuration restore when ifupdown is not available
+@reboot root sleep 5 && "/etc/www-security-assistant/ipset-restore.sh" >/dev/null 2>&1 && "/etc/www-security-assistant/iptables-restore.sh" >/dev/null 2>&1

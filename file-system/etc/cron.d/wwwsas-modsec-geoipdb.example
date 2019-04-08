@@ -1,0 +1,2 @@
+0 2 * * * root /etc/modsecurity/owasp-modsecurity-crs/util/upgrade.py --geoip --crs --cron >> /var/log/apache2_mod_security/owasp-modsecurity-crs-upgrade.log 2>&1
+
