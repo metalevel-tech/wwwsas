@@ -1,0 +1,14 @@
+*.conf
+*.list
+*.log
+*.state
+*.php
+*.local
+*.swp
+*.bak
+*.old
+*.cache
+*.history
+*.mail
+*.mail.plain
+/tmp/*

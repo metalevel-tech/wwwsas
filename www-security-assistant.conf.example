@@ -1,0 +1,203 @@
+#!/bin/bash
+
+# Name:    www-security-assistant.conf.example - the default configuration file of the script bundle WWW Security Assistant.
+# Summary: This file is sourced You should create your own configuration file by removing of the '.example' extension.
+#          When 'www-security-assistant.conf' exists it will be sourced in 'www-security-assistant.bash' and other scripts from the bundle.
+# Home:    https://github.com/pa4080/www-security-assistant
+# Author:  Spas Z. Spasov <spas.z.spasov@gmail.com> (C) 2018
+
+
+# --------------------------------
+# First priority: Private settings
+# --------------------------------
+
+# The directory where the script bundle is located
+WORK_DIR='/etc/www-security-assistant'
+
+# Get server`s host-name, or set it: HOSTNAME='example.com'
+HOSTNAME="$(hostname -f)"
+
+# You can just enter <email@example.com>
+EMAIL_FROM="Security Assistant <root@$HOSTNAME>"
+
+# Multiple accounts separated by commas are allowed:
+# EMAIL_TO="your@email.foo, your@email.bar, your@email.baz" - the emails sent to these boxes will be HTML formatted
+# EMAIL_TO_PLAIN="root@localhost, foo@localhost" - the emails sent to these boxes will be plain text
+# If none of these variables is set, script execution will be disconnected before the email section
+EMAIL_TO="admin@$HOSTNAME"
+EMAIL_TO_PLAIN="root@localhost"
+
+# Time-units can be minutes, hours, days, or weeks; see `man at`; `sudo atq` lists pending jobs; `sudo at -c job_number` shows the job's content;
+BAN_TIME='5 minutes'
+
+# Limit of tolerance of transgressions from certain IP
+LIMIT='5'
+
+# This value is used within the comunication between `modsecurity-assistant.bash` or `flood-detector.bash`, etc.  and `www-security-assistant.bash`
+# This solves an old issue and it is not longer needed - but why not :)
+# Note you should use the same format: with dash/minus in the beginning and the end of the string
+MY_DIVIDER='-DiViDeR-d1v1d3r-'
+
+# Set verbose mode of the reports (within the emails) for the following features
+# To unset this mode jist comment the variable's definitions
+REPORT_MODE_MODSEC='verbose'
+REPORT_MODE_ABIPDB='verbose'
+
+
+# -------------------------------------
+# First priority: AbuseIPDB Integration
+# -------------------------------------
+
+# If you want to use this feature, you should register on 'www.abuseipdb.com' and provide your API key here. The current version requires V2 API Key.
+# Once the key is provided the integration will be enabled. The IPs will be reported, when the treshold $LIMIT (provided above) is reached.
+AbuseIPDB_APIKEY=''
+
+# If you want to ban IPs permanently based on the analyse of the statistic, provided by www.abuseipdb.com, set '$AbuseIPDB_BAN' to 'YES'
+# Note: For these IPs the $LIMIT will be ignored. This feature will increase the execution time of the action section of 'www-security-assistant.bash'
+AbuseIPDB_ANALYSE_IP_AND_BAN='YES'
+
+# The LIMITs used by 'abuseipdb-push-pull.bash' when it is called in 'analyse_ip' mode from 'www-security-assistant.bash'.
+AbuseIPDB_totalReportsLimit='15'
+AbuseIPDB_abuseConfidenceScoreLimit='15'
+AbuseIPDB_CategoryCountLimit='5'
+
+# Aggressive Mode for ModSecurity
+# The script 'modsecurity-assistant.bash' will export the ModSecurity's disruptive '$RULE_ID' that is cause of the current thread.
+# If that '$RULE_ID' belongs to the following array the '$IP' will be reported to AbuseIPDB, no matter (but regard to) the other logic.
+# - RuleId '150' is wwwsas REQUEST_URI words blacklist;
+# - RuleId '160' is wwwsas Deny requests without a host header;
+# - RuleId '920350' is owasp Check that the host header is not an IP address.
+# - RuleId '920300' is owasp Generates a notice if the Accept header is missing.
+# - RuleId '949110' is owasp Anomaly Mode rule.
+# - RuleId '959100' is owasp Anomaly Mode rule.
+# Comment out the array to enable this feature.
+#AbuseIPDB_MODSEC_AGGRESSIVE_MODE_RULES=('150' '160' '920350' '920300' '949110' '959100')
+
+# Aggressive Mode for FloodDetector
+# Comment out the variable to enable this feature.
+#AbuseIPDB_FLOODT_AGGRESSIVE_MODE='YES'
+
+
+# --------------------------------
+# Second priority: Common settings
+# --------------------------------
+
+# Apavhe2
+# The log directory mentioned in /etc/apache2/envvars
+APACHE_LOG_DIR="/var/log/apache2"
+
+# ModEvasive for Apache 2
+# The log directory mentioned in /etc/apache2/mod-available/evasive.conf
+MOD_EVASIVE_LOG_DIR="/var/log/apache2_mod_evasive"
+MOD_EVASIVE_LOG_DIR_BAK="${MOD_EVASIVE_LOG_DIR}/bak"
+
+# ModSecurity for Apache 2
+# The log directory mentioned in /etc/apache2/mods-available/security2.conf or /etc/modsecurity/modsecurity.conf
+MOD_SECURITY_LOG_DIR="/var/log/apache2_mod_security"
+
+# modsecurity-whitelist-rule-generator.bash
+MOD_SECURITY_ISSUES_PAGE='/issues.php'
+
+# Setup process && modsecurity-whitelist-rule-generator.bash
+# The directory of the OWASP ModSec CRS installation, mentione turing the setup process
+MOD_SECURITY_OWASP_CRS_DIR='/etc/modsecurity/owasp-modsecurity-crs'
+
+# modsecurity-whitelist-rule-generator.bash
+MOD_SECURITY_AUDIT_LOG="${MOD_SECURITY_LOG_DIR}/modsec_audit.log"
+MOD_SECURITY_WHITELIST_FILE="${MOD_SECURITY_OWASP_CRS_DIR}/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf"
+
+# modsecurity-whitelist-rule-generator.bash
+SECURITY_RULE_PARSE_METHOD='latest'	# Use the latest rule id in the file $MOD_SECURITY_WHITELIST_FILE as base for the new rule id
+#SECURITY_RULE_PARSE_METHOD='greatest'	# Use the greatest rule id in the file $MOD_SECURITY_WHITELIST_FILE as base for the new rule id
+
+# flood-detector.bash
+TCP_STATES=('SYN_RECV')
+COMMON_CONNECTIONS_THRESHOLD='120'
+SINGLE_CONNECTIONS_THRESHOLD='40'
+
+# post-analyse.bash
+POST_ANALYSE_LIMIT='3'
+
+
+# --------------------------------
+# Third priority: Script settings
+# --------------------------------
+
+# Set the list of the available Agents in tha Automatic mode
+AGENTS=('ModSecurity' 'FloodDetector' 'Guardian' 'ModEvasive' 'a2Analyst' 'PostAnalyse' 'AbuseIPDBPushPull')
+
+# Agents with special statuswithin the script
+AGENT_MODSEC="${AGENTS[0]}"
+AGENT_FLOODT="${AGENTS[1]}"
+AGENT_MODEVS="${AGENTS[2]}"
+AGENT_GUARDI="${AGENTS[3]}"
+AGENT_A2ANLS="${AGENTS[4]}"
+AGENT_PSTANL="${AGENTS[5]}"
+AGENT_ADBIPP="${AGENTS[6]}"
+
+# Common used strings within the (email) messages, usualy these are our custom shell commands located/linked under /usrl/local/bin
+# Note the _FULL names are used in the next section.
+WWW_SAS='wwwsas'
+WWW_SAS_FULL='www-security-assistant'
+WWW_SAS_EXEC="${WORK_DIR}/${WWW_SAS_FULL}.bash"
+
+WWW_SAS_MOD_SECURITY_WLRG='wwwsas-mswlrg'
+WWW_SAS_MOD_SECURITY_WLRG_FULL='modsecurity-whitelist-rule-generator'
+WWW_SAS_MOD_SECURITY_WLRG_EXEC="${WORK_DIR}/${WWW_SAS_MOD_SECURITY_WLRG_FULL}.bash"
+
+WWW_SAS_FLOOD_DETECTOR='wwwsas-fd'
+WWW_SAS_FLOOD_DETECTOR_FULL='flood-detector'
+WWW_SAS_FLOOD_DETECTOR_EXEC="${WORK_DIR}/${WWW_SAS_FLOOD_DETECTOR_FULL}.bash"
+
+WWW_SAS_ABUSEIPDB='wwwsas-abuseipdb'
+WWW_SAS_ABUSEIPDB_FULL='abuseipdb-push-pull'
+WWW_SAS_ABUSEIPDB_EXEC="${WORK_DIR}/${WWW_SAS_ABUSEIPDB_FULL}.bash"
+
+WWW_SAS_POST_ANALYSE='wwwsas-pa'
+WWW_SAS_POST_ANALYSE_FULL='post-analyse'
+WWW_SAS_POST_ANALYSE_EXEC="${WORK_DIR}/${WWW_SAS_POST_ANALYSE_FULL}.bash"
+
+# Define a custom tmp directory
+WWW_SAS_TMP="${WORK_DIR}/tmp"; [[ "$EUID" -eq 0 ]] && { mkdir -p "$WWW_SAS_TMP" && chown www-data "$WWW_SAS_TMP"; }
+
+# The file where will be kept the data about the IPs added to the WhiteList. In the white-list put at least your server's IP and localhost IP 127.0.0.1
+WWW_SAS_WHITE_LIST="${WORK_DIR}/www-security-assistant.white.list"
+
+# The file where will be kept the data about the IPs added to the BanList
+WWW_SAS_BAN_LIST="${WORK_DIR}/www-security-assistant.black.list"
+
+# The file where will be kept the data about the IPs removed from the BanList
+WWW_SAS_BAN_CLEAR_LIST="${WORK_DIR}/www-security-assistant.clear.list"
+
+# The file where will be kept the data about the transhresions. Please be careful when manipulate this file manually
+WWW_SAS_HISTORY="${WORK_DIR}/${WWW_SAS_FULL}.history"
+
+# The execution log file used by the satellite scripts
+WWW_SAS_EXEC_LOG="${WWW_SAS_TMP}/${WWW_SAS_FULL}.exec.log"; [[ "$EUID" -eq 0 ]] && { touch "$WWW_SAS_EXEC_LOG" && chown www-data "$WWW_SAS_EXEC_LOG"; }
+
+# Error log file used to log internal messages before send them by email
+WWW_SAS_ERROR_LOG="${WWW_SAS_TMP}/${WWW_SAS_FULL}.error.log"; [[ "$EUID" -eq 0 ]] && { touch "$WWW_SAS_ERROR_LOG" && chown www-data "$WWW_SAS_ERROR_LOG"; }
+
+# This is a history of the Error logs, it is used by the wwwsas-post-analyse script
+WWW_SAS_ERROR_LOG_HISTORY="${WWW_SAS_TMP}/${WWW_SAS_FULL}.error.history"; [[ "$EUID" -eq 0 ]] && { touch "$WWW_SAS_ERROR_LOG_HISTORY" && chown www-data "$WWW_SAS_ERROR_LOG_HISTORY"; }
+
+# The IPTables chain that is used by the script
+WWW_SAS_IPTBL_CHAIN='WWWSAS'
+
+# Here is used additional setup for iptables save/restore on reboot: https://www.cyberciti.biz/faq/iptables-read-and-block-ips-subnets-from-text-file/
+WWW_SAS_IPTABLES_SAVE="${WORK_DIR}/iptables-save.sh"
+WWW_SAS_IPTABLES_RESTORE="${WORK_DIR}/iptables-restore.sh"
+
+# These files will be automatically deleted - see the bottom of the main script
+EMAIL_BODY="${WWW_SAS_TMP}/${WWW_SAS_FULL}.mail.${RANDOM}"
+EMAIL_BODY_PLAIN="${EMAIL_BODY}.plain"
+
+# The style sheet of the HTML email
+WWW_SAS_MAIL_STYLE_CSS="${WORK_DIR}/www-security-assistant.mail.css"
+
+# Get the time coordinates of the event
+TIME="$(date +%H:%M:%S)"
+DATE="$(date +%Y-%m-%d)"
+
+# Frequent used messages (same as the above)
+USAGE="Usage: $WWW_SAS <IP> [ ModSecurity | ModEvasive 'notes' | Guardian | a2Analyst | FloodDetector 'notes' | PostAnalyse '#' ] or [ --DROP 'notes' | --CLEAR 'notes' | --ACCEPT 'notes' | --ACCEPT-CHAIN 'notes' ]"

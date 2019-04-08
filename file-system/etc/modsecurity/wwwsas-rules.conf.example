@@ -1,0 +1,108 @@
+# Disable HTTP 1.0 Protocol - review rule 180
+# https://drive.google.com/file/d/0BwLFsHKU3abkVGJDOUpWSDFSZ1U/view -------------------------
+#
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+	RewriteCond %{THE_REQUEST} !HTTP/1.1$
+	RewriteRule .* - [F]
+</IfModule>
+
+
+# Defeat HTTP fingerprinting;
+# https://www.packtpub.com/books/content/blocking-common-attacks-using-modsecurity-25-part-1 -----------
+#
+# Send full server signature so ModSecurity can alter it
+# https://www.virendrachandak.com/techtalk/how-to-hide-apache-information-with-servertokens-and-serversignature-directives/
+#
+#ServerTokens Prod
+ServerTokens Full
+
+
+# Change server signature (Alter the web server signature sent by Apache)
+#
+SecServerSignature "Apache"
+#SecServerSignature "Microsoft-IIS/5.0"
+#SecServerSignature "Microsoft-IIS/6.0" # Интересно, прави проблем при презареждане (след потвърждаване/запис) на сттраниците с настройки на разширенията за WP.
+
+
+# -------------------------
+
+# Directory traversal attacks Example Rule
+#
+#SecRule REQUEST_URI "../" "t:urlDecodeUni, deny, log, id:109, redirect:/issues.php"
+
+
+# Uri Access Rule Example
+#
+#SecRule REQUEST_URI "/issues.php" "id:110,pass,log"
+
+
+# Whitelist some IPs
+#
+SecRule REMOTE_ADDR "@ipMatch 127.0.0.1,127.0.0.2" \
+    "id:100, phase:1, allow, \
+     ctl:auditEngine=Off, \
+     ctl:ruleEngine=Off"
+
+
+# REQUEST_URI words blacklist
+#
+SecRule REQUEST_URI "@pmFromFile /etc/www-security-assistant/modsecurity-uri.black.list" \
+	"id:150, phase:2, log, t:lowercase, drop, deny, status:403, \
+		redirect:'/issues.php', \
+		tag:'www-sas-uri-black-list', \
+		chain"
+		SecRule REMOTE_ADDR "!@ipMatchFromFile /etc/www-security-assistant/modsecurity-ip.white.list" \
+			"setenv:REMOTE_HOST=%{REMOTE_HOST}, \
+			 setenv:ARGS=%{ARGS}, \
+			 setenv:RULE_ID=%{RULE.id}, \
+			 setenv:FULL_REQUEST=%{FULL_REQUEST}, \
+			 exec:/etc/www-security-assistant/modsecurity-assistant.bash"
+
+
+# Deny requests without a host header
+#
+SecRule &REQUEST_HEADERS:Host "@eq 0" \
+	"id:160, phase:2, log, t:lowercase, drop, deny, status:403, \
+		redirect:'/issues.php', \
+		tag:'www-sas-requests-without-host-header', \
+		tag:'www-sas-uri-black-list', \
+		chain"
+		SecRule REMOTE_ADDR "!@ipMatchFromFile /etc/www-security-assistant/modsecurity-ip.white.list" \
+			"setenv:REMOTE_HOST=%{REMOTE_HOST}, \
+			 setenv:ARGS=%{ARGS}, \
+			 setenv:RULE_ID=%{RULE.id}, \
+			 setenv:FULL_REQUEST=%{FULL_REQUEST}, \
+			 exec:/etc/www-security-assistant/modsecurity-assistant.bash"
+
+
+# Deny request that don't use GET, HEAD or POST
+#
+SecRule REQUEST_METHOD "!^(get|head|post)$" \
+	"id:170, phase:2, log, t:lowercase, drop, deny, status:403, \
+		redirect:'/issues.php', \
+		tag:'www-sas-request-do-not-use-get-head-post', \
+		chain"
+		SecRule REMOTE_ADDR "!@ipMatchFromFile /etc/www-security-assistant/modsecurity-ip.white.list" \
+			"setenv:REMOTE_HOST=%{REMOTE_HOST}, \
+			 setenv:ARGS=%{ARGS}, \
+			 setenv:RULE_ID=%{RULE.id}, \
+			 setenv:FULL_REQUEST=%{FULL_REQUEST}, \
+			 exec:/etc/www-security-assistant/modsecurity-assistant.bash"
+
+
+# Only allow HTTP version 1.0 and 1.1
+#
+SecRule REQUEST_PROTOCOL "!^http/1.(0|1|2)$" \
+	"id:180, phase:1, log, t:lowercase, drop, deny, status:403, \
+		redirect:'/issues.php', \
+		tag:'www-sas-denied-http-protocol', \
+		chain"
+		SecRule REMOTE_ADDR "!@ipMatchFromFile /etc/www-security-assistant/modsecurity-ip.white.list" \
+			"setenv:REMOTE_HOST=%{REMOTE_HOST}, \
+			 setenv:ARGS=%{ARGS}, \
+			 setenv:RULE_ID=%{RULE.id}, \
+			 setenv:FULL_REQUEST=%{FULL_REQUEST}, \
+			 exec:/etc/www-security-assistant/modsecurity-assistant.bash"
+
+
