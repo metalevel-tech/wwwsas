@@ -1,6 +1,6 @@
 # Update log
 
-## Features, presented in the master branch, not presented in the [stable.v.4][6] branch
+## Features, presented in [stable.v.5][8], not presented in the [stable.v.4][6] branch
 
 * The script [**`post-analyse.bash`**](post-analyse.bash) is engaged. Also there is a relevant `crontab` script, that will be deployed by the [`SETUP`](SETUP) process - see [`file-system/etc/cron.d/wwwsas-post-analyse`](file-system/etc/cron.d/wwwsas-post-analyse.example).
 
@@ -47,3 +47,4 @@
  [5]: https://github.com/pa4080/www-security-assistant/tree/stable.v.3
  [6]: https://github.com/pa4080/www-security-assistant/tree/stable.v.4
  [7]: https://github.com/pa4080/www-security-assistant/tree/stable.v.4/README.UPDATE.md
+ [8]: https://github.com/pa4080/www-security-assistant/tree/stable.v.5
