@@ -113,7 +113,7 @@ then
 
     exit 0
 
-# PostAnalyse agent has higher priority than the other agent
+# PostAnalyse agent has higher priority than the other agent, because in otherway the request will not pass through the next conditions
 elif [[ $AGENT == "$AGENT_PSTANL" ]]
 then
 

@@ -116,7 +116,7 @@ COMMON_CONNECTIONS_THRESHOLD='120'
 SINGLE_CONNECTIONS_THRESHOLD='40'
 
 # post-analyse.bash
-POST_ANALYSE_LIMIT='3'
+POST_ANALYSE_LIMIT='7'
 
 
 # --------------------------------

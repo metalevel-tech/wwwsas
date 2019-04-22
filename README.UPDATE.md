@@ -2,7 +2,7 @@
 
 ## Features, presented in the master branch, not presented in the [stable.v.5][8] branch
 
-* ...
+* Updated logic in the main script according to the PostAnalyse agent - see [**`post-analyse.bash`**](post-analyse.bash).
 
 ## Features, presented in [stable.v.5][8], not presented in the [stable.v.4][6] branch
 
