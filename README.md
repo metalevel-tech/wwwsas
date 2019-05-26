@@ -65,7 +65,7 @@ Here is ho one HTML formated email looks like:
 
 ![Examples email sent by the script.](.images/www-security-assistant-email-demo.png)
 
-Another cool feature is the embedded [Whitelist Rule Generator for ModSecurity](#wwwsas-whitelist-rule-generator--modsecurity-rules-whitelisting).
+Another cool feature is the embedded [Whitelist Rule Generator for ModSecurity](#whitelist-rule-generator--modsecurity-rules-whitelisting).
 
 ### Manual mode
 
