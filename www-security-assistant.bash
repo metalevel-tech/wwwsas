@@ -227,7 +227,7 @@ then
 
     if [[ -n $AbuseIPDB_APIKEY ]]
     then
-        printf "To report the IP address to AbuseIPDB use this command:\n\n\t%s %s 'push-ip-data-html' '21,15' 'Comment'\n\n" "$WWW_SAS_ABUSEIPDB" "$IP"
+        printf "To report the IP address to AbuseIPDB use this command:\n\n\t%s %s 'push-ip-data' '21,15' '$NOTES'\n\n" "$WWW_SAS_ABUSEIPDB" "$IP"
         printf "Where '21,15' are categories from https://www.abuseipdb.com/categories\n"
         printf "Use the following command to see the full list:\n\n\t%s - 'categories'\n\n" "$WWW_SAS_ABUSEIPDB"
     fi
