@@ -1,5 +1,14 @@
 # Update log
 
+## ToDo:
+
+* Add check for websearch bots - example for Googe bots (source: [Verifying Googlebot](https://support.google.com/webmasters/answer/80553)):
+
+ ````bash
+ $ host 66.249.66.53
+ 53.66.249.66.in-addr.arpa domain name pointer crawl-66-249-66-53.googlebot.com.
+ ````
+
 ## Features, presented in the master branch, not presented in the [stable.v.5][8] branch
 
 * Updated logic in the main script according to the PostAnalyse agent - see [**`post-analyse.bash`**](post-analyse.bash).
