@@ -8,6 +8,11 @@
  $ host 66.249.66.53
  53.66.249.66.in-addr.arpa domain name pointer crawl-66-249-66-53.googlebot.com.
  ````
+* Add AbuseIPDB check for modEvasive and a2Analytist.
+
+* Fail2ban integration:
+
+    * https://www.digitalocean.com/community/tutorials/how-to-protect-ssh-with-fail2ban-on-ubuntu-14-04
 
 ## Features, presented in the master branch, not presented in the [stable.v.5][8] branch
 
