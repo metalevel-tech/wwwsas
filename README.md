@@ -361,11 +361,15 @@ Note: on some VPSes there is a problem with the scripts placed in `/etc/network/
 
 * During the installation process, the [`SETUP`](#step-2--setup-www-security-assistant-script-bundle) script will automatically create the chain `WWWSAS`, also will issue the rules: *accept the loopback input* and *allow 3 way handshake*.
 * The scripts [`iptables-save.sh`](iptables-save.sh), [`iptables-restore.sh`](iptables-restore.sh), [`ipset-save.sh`](ipset-save.sh) are [`ipset-restore.sh`](ipset-restore.sh) included in the repository. Also the relevant symbolic links will be created by the `SETUP` script.
+
 * `iptables-save.sh` is used by the main script [`www-security-assistant.bash`](www-security-assistant.bash) when an IP address is permanently blocked.
+
 * **Further configuration of `iptables`**. The file [**`iptables.basic-setup.local.example`**](iptables.basic-setup.local.example) contains set ot useful rules. It is based on the sources listed below, but the rules that does issues on my servers are commented, so on for my needs I can trigger the state of `iptables` directly by the commands `sudo sh iptables.basic-setup.local iptables_add_rules` and `sudo sh iptables.basic-setup.local iptables_remove_rules`, without need to edit it.
+
   * [**DDoS Protection With IPtables: The Ultimate Guide**!]( https://javapipe.com/ddos/blog/iptables-ddos-protection/)
   * [**How to protect against port scanners?** on Unix & Linux](https://unix.stackexchange.com/a/407904/201297)
   * [How to protect from port scanning and smurf attack in Linux Server by iptables. on sharadchhetri.com](http://sharadchhetri.com/2013/06/15/how-to-protect-from-port-scanning-and-smurf-attack-in-linux-server-by-iptables/)
+  * [How to fix iptables if I have blocked all incoming and outgoing connections?](https://askubuntu.com/a/910018/566421)
 
 ## ModEvasive for Apache2
 
