@@ -90,6 +90,8 @@ SecRule MULTIPART_UNMATCHED_BOUNDARY "!@eq 0" \
 #
 #SecPcreMatchLimit 1000
 #SecPcreMatchLimitRecursion 1000
+
+# For a reference see szs.xxxxx.cloud.conf
 # https://support.atomicorp.com/hc/en-us/articles/360000188468-Rule-execution-error-PCRE-limits-exceeded-8-null-
 SecPcreMatchLimit 250000
 SecPcreMatchLimitRecursion 250000
