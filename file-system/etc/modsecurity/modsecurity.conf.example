@@ -88,8 +88,11 @@ SecRule MULTIPART_UNMATCHED_BOUNDARY "!@eq 0" \
 # PCRE Tuning
 # We want to avoid a potential RegEx DoS condition
 #
-SecPcreMatchLimit 1000
-SecPcreMatchLimitRecursion 1000
+#SecPcreMatchLimit 1000
+#SecPcreMatchLimitRecursion 1000
+# https://support.atomicorp.com/hc/en-us/articles/360000188468-Rule-execution-error-PCRE-limits-exceeded-8-null-
+SecPcreMatchLimit 250000
+SecPcreMatchLimitRecursion 250000
 
 # Some internal errors will set flags in TX and we will need to look for these.
 # All of these are prefixed with "MSC_".  The following flags currently exist:
