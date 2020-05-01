@@ -97,6 +97,19 @@
     echo "" >> "$LOG_FILE" 2>&1
     ````
     
+    **Setup OWASP CRS 3.2/master to use the GeoIP data base**
+    
+    Modify `/etc/modsecurity/owasp-modsecurity-crs/crs-setup.conf` in this way:
+    
+    ````bash
+    # For ModSecurity v3:
+    #SecGeoLookupDB /etc/modsecurity/geoipupdate/data/GeoLite2-Country.mmdb
+    # For ModSecurity v2 (points to the converted one):
+    SecGeoLookupDB /etc/modsecurity/geoipupdate/data/GeoliteCountry.dat
+
+    ````
+    
+    
 * Add check for websearch bots - example for Googe bots (source: [Verifying Googlebot](https://support.google.com/webmasters/answer/80553)):
 
  ````bash
