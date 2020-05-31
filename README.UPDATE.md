@@ -31,7 +31,7 @@
     ````
     
     ````bash
-    $ cat geoip-manual-update.sh 
+    $ cat /etc/modsecurity/geoipupdate/geoip-manual-update.sh
     #!/bin/sh
 
     LOG_FILE='/var/log/wwwsas-geoipupdate.cron.log'
