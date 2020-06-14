@@ -87,7 +87,7 @@ AbuseIPDB_CategoryCountLimit='5'
 APACHE_LOG_DIR="/var/log/apache2"
 
 # ModEvasive for Apache 2
-# The log directory mentioned in /etc/apache2/mod-available/evasive.conf
+# The log directory mentioned in /etc/apache2/mods-available/evasive.conf
 MOD_EVASIVE_LOG_DIR="/var/log/apache2_mod_evasive"
 MOD_EVASIVE_LOG_DIR_BAK="${MOD_EVASIVE_LOG_DIR}/bak"
 
@@ -99,7 +99,7 @@ MOD_SECURITY_LOG_DIR="/var/log/apache2_mod_security"
 MOD_SECURITY_ISSUES_PAGE='/issues.php'
 
 # Setup process && modsecurity-whitelist-rule-generator.bash
-# The directory of the OWASP ModSec CRS installation, mentione turing the setup process
+# The directory of the OWASP ModSec CRS installation, mentioned during the setup process
 MOD_SECURITY_OWASP_CRS_DIR='/etc/modsecurity/owasp-modsecurity-crs'
 
 # modsecurity-whitelist-rule-generator.bash
@@ -109,6 +109,11 @@ MOD_SECURITY_WHITELIST_FILE="${MOD_SECURITY_OWASP_CRS_DIR}/rules/RESPONSE-999-EX
 # modsecurity-whitelist-rule-generator.bash
 SECURITY_RULE_PARSE_METHOD='latest'	# Use the latest rule id in the file $MOD_SECURITY_WHITELIST_FILE as base for the new rule id
 #SECURITY_RULE_PARSE_METHOD='greatest'	# Use the greatest rule id in the file $MOD_SECURITY_WHITELIST_FILE as base for the new rule id
+
+# ModSecurity and ModEvasive whitelist configuration files 
+MOD_SECURITY_WWWSAS_CONF="/etc/modsecurity/wwwsas-rules.conf"
+MOD_SECURITY_WWWSAS_WLST="${WORK_DIR}/modsecurity-ip.white.list"
+MOD_EVASIVE_WWWSAS_CONF="/etc/apache2/mods-available/evasive.conf"
 
 # flood-detector.bash
 TCP_STATES=('SYN_RECV')

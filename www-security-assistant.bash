@@ -25,7 +25,7 @@
 # 	wwwsas <IP> < ModSecurity ["$NOTES"] | FloodDetector ["$NOTES"] | ModEvasive | Guardian | a2Analyst | PostAnalyse ["$NOTES"] >
 #
 # Manual Mode: Pseudo Agents, call syntax
-#	wwwsas <IP> < --DROP ["$NOTES"] | --CLEAR ["$NOTES"] | --ACCEPT ["$NOTES"] | --ACCEPT-CHAIN ["$NOTES"] >
+#	wwwsas <IP> < --DROP ["$NOTES"] | --CLEAR ["$NOTES"] | --ACCEPT ["$NOTES"] | --ACCEPT-CHAIN ["$NOTES"] | --ACCEPT-REMOVE ["$NOTES"] >
 
 
 # ---------------------------------
@@ -56,12 +56,12 @@ WORK_DIR="/etc/www-security-assistant"
 CONF_FILE="${WORK_DIR}/www-security-assistant.conf"
 
 # Asign the input data to certain variables
-IP="${1}"
-AGENT="${2}"
-NOTES="${3}"
-FLOODT_REPORT="${4}"
-MODSEC_RULE_ID="${4}"
-REQUEST_URI="${5}"
+IP="$1"
+AGENT="$2"
+NOTES="$3"
+FLOODT_REPORT="$4"
+MODSEC_RULE_ID="$4"
+REQUEST_URI="$5"
 
 # Get the $USER that execute the script
 RUN_USER="$(who -m | awk '{print $1}')"
@@ -96,7 +96,7 @@ then
     printf 'The IP address %s is a member of our WhiteList!\n\n' "$IP" | tee -a "$WWW_SAS_ERROR_LOG" && MAIL_FLAG='TYPE_1'
 
     # The ${WWW_SAS_ERROR_LOG_HISTORY} is a history of the Error logs, it is used by the wwwsas-post-analyse script
-    printf 'On %-10s at %-8s %-14s according to %-16s: The IP address is a member of our WhiteList! Notes: %s\n' "$DATE" "$TIME" "$AGENT" "$IP" "$(echo "$NOTES" | sed "s/$MY_DIVIDER/; /g")" | tee -a "${WWW_SAS_ERROR_LOG_HISTORY}"
+    printf 'On %-10s at %-8s %-14s according to %-16s: The IP address is a member of our WhiteList! Notes: %s \n' "$DATE" "$TIME" "$AGENT" "$IP" "$(echo "$NOTES" | sed "s/$MY_DIVIDER/; /g")" | tee -a "${WWW_SAS_ERROR_LOG_HISTORY}"
 
     # Backup ModEvasive lock file
     find "$MOD_EVASIVE_LOG_DIR" -maxdepth 1 -type f -exec mv {} "$MOD_EVASIVE_LOG_DIR_BAK" \;
@@ -177,7 +177,7 @@ then
     /sbin/iptables -L "$WWW_SAS_IPTBL_CHAIN" -n --line-numbers; echo
 
     # Output and Log a message and exit
-    printf 'On %-10s at %-8s | This IP/CIDR was removed from the BanList by @%s: %-18s \t| Notes: %s\n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" | tee -a "$WWW_SAS_BAN_CLEAR_LIST"
+    printf 'On %-10s at %-8s | This IP/CIDR was removed from the BanList by @%s: %-18s \t| Notes: %s \n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" | tee -a "$WWW_SAS_BAN_CLEAR_LIST"
 
     # Backup ModEvasive lock file
     find "$MOD_EVASIVE_LOG_DIR" -maxdepth 1 -type f -exec mv {} "$MOD_EVASIVE_LOG_DIR_BAK" \;
@@ -223,7 +223,7 @@ then
     eval "$WWW_SAS_IPTABLES_SAVE"
 
     # Output and Log a message and exit
-    printf 'On %-10s at %-8s | This IP/CIDR was added to the BanList by @%s: %-18s \t| Notes: %s\n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" | tee -a "$WWW_SAS_BAN_LIST"
+    printf 'On %-10s at %-8s | This IP/CIDR was added to the BanList by @%s: %-18s \t| Notes: %s \n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" | tee -a "$WWW_SAS_BAN_LIST"
 
     if [[ -n $AbuseIPDB_APIKEY ]]
     then
@@ -238,29 +238,62 @@ then
     exit 0
 
 # Add $IP to the ACCEPT (WHITE) List, syntax: www-security-assistant.bash <IP> --ACCEPT 'log notes'"
-elif [[ $AGENT == "--ACCEPT" ]]
+elif [[ $AGENT == "--ACCEPT-REMOVE" ]]
 then
 
-    # Output and Log a message and exit
-    printf 'On %-10s at %-8s | This IP/CIDR was added to the ACCEPT (WHITE) List by @%s: %-18s \t| Notes: %s\n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" | tee -a "$WWW_SAS_WHITE_LIST"
-    printf 'A rule has benn added to our WhiteList - %s \nFor ModSecurity and ModEvasi you should do it on yourself.\n' "$WWW_SAS_WHITE_LIST"
+    # Remove the entry from '/etc/www-security-assistant/www-security-assistant.white.list'
+    sed -i "/$IP/d" "$WWW_SAS_WHITE_LIST" >/dev/null 2>&1
+    
+    # Remove the entry from '/etc/modsecurity/wwwsas-rules.conf'
+    sed -i "s/,$IP//" "$MOD_SECURITY_WWWSAS_CONF" >/dev/null 2>&1
+
+    # Remove the entry from '/etc/www-security-assistant/modsecurity-ip.white.list'
+    sed -i "/$IP/d" "$MOD_SECURITY_WWWSAS_WLST" >/dev/null 2>&1
+
+    # Remove the entry from '/etc/apache2/mods-available/evasive.conf'
+    sed -i "s/\s$IP//" "$MOD_EVASIVE_WWWSAS_CONF" >/dev/null 2>&1
+
+    printf "IP '%s' is removed from the following files: \n\t %s \n\t %s \n\t %s \n\t \n\t %s" "$IP" "$WWW_SAS_WHITE_LIST" "$MOD_SECURITY_WWWSAS_CONF" "$MOD_SECURITY_WWWSAS_WLST" "$MOD_EVASIVE_WWWSAS_CONF"
+
+    # Attempt to remove iptables rule
+    /sbin/iptables -D "$WWW_SAS_IPTBL_CHAIN" -w -s "$IP" -j ACCEPT
+    eval "$WWW_SAS_IPTABLES_SAVE"
 
     # Backup ModEvasive lock file
     find "$MOD_EVASIVE_LOG_DIR" -maxdepth 1 -type f -exec mv {} "$MOD_EVASIVE_LOG_DIR_BAK" \;
 
     exit 0
 
-# Add $IP to the ACCEPT (WHITE) List and add IPTables rule, syntax: www-security-assistant.bash <IP> --ACCEPT-CHAIN 'log notes'"
-elif [[ "$AGENT" == "--ACCEPT-CHAIN" ]]
+# Add $IP to the ACCEPT (WHITE) List, syntax: www-security-assistant.bash <IP> --ACCEPT 'log notes'"
+elif [[ $AGENT =~ "--ACCEPT" ]]
 then
 
-    /sbin/iptables -A "$WWW_SAS_IPTBL_CHAIN" -w -s "$IP" -j ACCEPT
-    /sbin/iptables -L "$WWW_SAS_IPTBL_CHAIN" -w -n --line-numbers
-    eval "$WWW_SAS_IPTABLES_SAVE"
-    # Output and Log a message and exit
-    NOTE='IPTables rule has been created!'
-    printf 'On %-10s at %-8s | This IP/CIDR was added to the ACCEPT (WHITE) List by @%s: %-18s \t| Notes: %s %s\n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" "$NOTE" | tee -a "$WWW_SAS_WHITE_LIST"
-    printf 'A rule has benn added to our WhiteList - %s \nAlso IPTables rule has been added.\nFor ModSecurity and ModEvasi you should do it on yourself.\n' "$WWW_SAS_WHITE_LIST"
+    # Add an entry to '/etc/www-security-assistant/www-security-assistant.white.list'
+    printf 'On %-10s at %-8s | This IP/CIDR was added to the ACCEPT (WHITE) List by @%s: %-18s \t| Notes: %s \n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" | tee -a "$WWW_SAS_WHITE_LIST"
+    
+    # Add an entry to '/etc/modsecurity/wwwsas-rules.conf'
+    sed -i "s/127\.0\.0\.1/127.0.0.1,$IP/" "$MOD_SECURITY_WWWSAS_CONF" >/dev/null 2>&1
+
+    # Add an entry to '/etc/www-security-assistant/modsecurity-ip.white.list'
+    echo "$IP" >> "$MOD_SECURITY_WWWSAS_WLST"
+
+    # Add an entry to '/etc/apache2/mods-available/evasive.conf'
+    sed -i "s/127\.0\.0\.1/127.0.0.1 $IP/" "$MOD_EVASIVE_WWWSAS_CONF" >/dev/null 2>&1
+
+    # Add $IP to the ACCEPT (WHITE) List and add IPTables rule, syntax: www-security-assistant.bash <IP> --ACCEPT-CHAIN 'log notes'"
+    if [[ "$AGENT" == "--ACCEPT-CHAIN" ]]
+    then
+
+        /sbin/iptables -A "$WWW_SAS_IPTBL_CHAIN" -w -s "$IP" -j ACCEPT
+        /sbin/iptables -L "$WWW_SAS_IPTBL_CHAIN" -w -n --line-numbers
+        eval "$WWW_SAS_IPTABLES_SAVE"
+        # Add an entry to '/etc/www-security-assistant/www-security-assistant.white.list' - thi is a duplicate of the above record, but it is ok
+        NOTE='IPTables rule has been created!'
+        printf 'On %-10s at %-8s | This IP/CIDR was added to the ACCEPT (WHITE) List by @%s: %-18s \t| Notes: %s %s \n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" "$NOTE" | tee -a "$WWW_SAS_WHITE_LIST"
+    fi
+
+    # Output info
+    printf "\n\nThe IP address '%s' is added to the following files: \n\t %s \n\t %s \n\t %s" "$IP" "$WWW_SAS_WHITE_LIST" "$MOD_SECURITY_WWWSAS_CONF" "$MOD_SECURITY_WWWSAS_WLST"
 
     # Backup ModEvasive lock file
     find "$MOD_EVASIVE_LOG_DIR" -maxdepth 1 -type f -exec mv {} "$MOD_EVASIVE_LOG_DIR_BAK" \;
@@ -293,7 +326,7 @@ then
 
         if [[ -z $(grep -wo "$IP" "$WWW_SAS_BAN_LIST") ]]
         then
-            printf 'On %-10s at %-8s | This IP was added to the BanList by @%s: %-18s\t Due to an analyse, provided by @%s\n' "$DATE" "$TIME" "$AGENT" "$IP" "$AGENT_ADBIPP" | tee -a "$WWW_SAS_BAN_LIST"
+            printf 'On %-10s at %-8s | This IP was added to the BanList by @%s: %-18s\t Due to an analyse, provided by @%s \n' "$DATE" "$TIME" "$AGENT" "$IP" "$AGENT_ADBIPP" | tee -a "$WWW_SAS_BAN_LIST"
         fi
 
         ACTION_SPECIFFIC_MESSAGE="$(printf 'Due to an analyse, provided by @%s, they <i>was added to the BanList</i> on %s at %s!' "$AGENT_ADBIPP" "$DATE" "$TIME")"
@@ -334,7 +367,7 @@ then
     NOTES_LOCAL="$(echo "$NOTES" | sed "s/$MY_DIVIDER/; /g")"
 
     # Log the current thread into the $WWW_SAS_HISTORY file
-    printf 'On %-10s at %-8s | %-12s : %-18s | Notes: %s\n' "$DATE" "$TIME" "$AGENT" "$IP" "$NOTES_LOCAL" | tee -a "$WWW_SAS_HISTORY"
+    printf 'On %-10s at %-8s | %-12s : %-18s | Notes: %s \n' "$DATE" "$TIME" "$AGENT" "$IP" "$NOTES_LOCAL" | tee -a "$WWW_SAS_HISTORY"
 
 # For all other cases
 else

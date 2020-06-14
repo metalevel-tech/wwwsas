@@ -85,13 +85,20 @@ This mode accept the following options:
 
 * `www-security-assistant.bash <ip-address>` **`--ACCEPT "log notes"`**
 
-  Creates only an entry into the file `/etc/www-security-assistant/www-security-assistant.white.list`.
+  Creates entries in:
+  * `/etc/www-security-assistant/www-security-assistant.white.list`,
+  * `/etc/modsecurity/wwwsas-rules.conf`,
+  * `/etc/www-security-assistant/modsecurity-ip.white.list` and
+  * `/etc/apache2/mods-available/evasive.conf`.
+
 
 * `www-security-assistant.bash <ip-address>` **`--ACCEPT-CHAIN "log notes"`**
 
-  Creates an entry into the file `/etc/www-security-assistant/www-security-assistant.white.list` and generates a rule as:
+  The same as the above plus a rule as: `iptables -A WWWSAS -s $IP -j ACCEPT`.
 
-      iptables -A WWWSAS -s $IP -j ACCEPT
+* `www-security-assistant.bash <ip-address>` **`--ACCEPT-REMOVE "log notes"`**
+
+  Reverts the changes made by any of the ACCEPT commands.
 
 ### Dependencies
 
