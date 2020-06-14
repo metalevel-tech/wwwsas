@@ -25,7 +25,7 @@
 # 	wwwsas <IP> < ModSecurity ["$NOTES"] | FloodDetector ["$NOTES"] | ModEvasive | Guardian | a2Analyst | PostAnalyse ["$NOTES"] >
 #
 # Manual Mode: Pseudo Agents, call syntax
-#	wwwsas <IP> < --DROP ["$NOTES"] | --CLEAR ["$NOTES"] | --ACCEPT ["$NOTES"] | --ACCEPT-CHAIN ["$NOTES"] | --ACCEPT-REMOVE ["$NOTES"] >
+#	wwwsas <IP> < --DROP ["$NOTES"] | --CLEAR ["$NOTES"] | --ACCEPT ["$NOTES"] | --ACCEPT-CHAIN ["$NOTES"] | --ACCEPT-REMOVE >
 
 
 # ---------------------------------

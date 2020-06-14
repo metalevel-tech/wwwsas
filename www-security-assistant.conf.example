@@ -205,4 +205,4 @@ TIME="$(date +%H:%M:%S)"
 DATE="$(date +%Y-%m-%d)"
 
 # Frequent used messages (same as the above)
-USAGE="Usage: $WWW_SAS <IP> [ ModSecurity | ModEvasive 'notes' | Guardian | a2Analyst | FloodDetector 'notes' | PostAnalyse '#' ] or [ --DROP 'notes' | --CLEAR 'notes' | --ACCEPT 'notes' | --ACCEPT-CHAIN 'notes' ]"
+USAGE="Usage: $WWW_SAS <IP> [ ModSecurity | ModEvasive 'notes' | Guardian | a2Analyst | FloodDetector 'notes' | PostAnalyse '#' ] or [ --DROP 'notes' | --CLEAR 'notes' | --ACCEPT 'notes' | --ACCEPT-CHAIN 'notes' | --ACCEPT-REMOVE ]"
