@@ -48,7 +48,7 @@ LOG_FILE="${0}.log"
 >"$LOG_FILE"
 
 # Installer version
-INSTALLER_VERSION='v.6.0'
+INSTALLER_VERSION='v.6.1'
 
 # Output colors
 RED='\033[0;31m'
