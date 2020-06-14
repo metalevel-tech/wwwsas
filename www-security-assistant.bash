@@ -104,7 +104,7 @@ then
     # Remove the entry from '/etc/apache2/mods-available/evasive.conf'
     sed -i "s/\s$IP//" "$MOD_EVASIVE_WWWSAS_CONF" >/dev/null 2>&1
 
-    printf "IP '%s' is removed from the following files: \n\t %s \n\t %s \n\t %s \n\t \n\t %s \n\n" "$IP" "$WWW_SAS_WHITE_LIST" "$MOD_SECURITY_WWWSAS_CONF" "$MOD_SECURITY_WWWSAS_WLST" "$MOD_EVASIVE_WWWSAS_CONF"
+    printf "IP '%s' is removed from the following files: \n\t %s \n\t %s \n\t %s \n\t %s \n\n" "$IP" "$WWW_SAS_WHITE_LIST" "$MOD_SECURITY_WWWSAS_CONF" "$MOD_SECURITY_WWWSAS_WLST" "$MOD_EVASIVE_WWWSAS_CONF"
 
     # Attempt to remove iptables rule
     /sbin/iptables -D "$WWW_SAS_IPTBL_CHAIN" -w -s "$IP" -j ACCEPT
