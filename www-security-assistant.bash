@@ -88,8 +88,35 @@ printf "\n\n*****\nSECURITY LOG from %s on %s : %s : %s : %s\n\n" "$TIME" "$DATE
 # Action section
 # --------------
 
+# Remove $IP fromthe ACCEPT (WHITE) List, syntax: www-security-assistant.bash <IP> --ACCEPT-REMOVE
+if [[ $AGENT == "--ACCEPT-REMOVE" ]]
+then
+
+    # Remove the entry from '/etc/www-security-assistant/www-security-assistant.white.list'
+    sed -i "/$IP/d" "$WWW_SAS_WHITE_LIST" >/dev/null 2>&1
+    
+    # Remove the entry from '/etc/modsecurity/wwwsas-rules.conf'
+    sed -i "s/,$IP//" "$MOD_SECURITY_WWWSAS_CONF" >/dev/null 2>&1
+
+    # Remove the entry from '/etc/www-security-assistant/modsecurity-ip.white.list'
+    sed -i "/$IP/d" "$MOD_SECURITY_WWWSAS_WLST" >/dev/null 2>&1
+
+    # Remove the entry from '/etc/apache2/mods-available/evasive.conf'
+    sed -i "s/\s$IP//" "$MOD_EVASIVE_WWWSAS_CONF" >/dev/null 2>&1
+
+    printf "IP '%s' is removed from the following files: \n\t %s \n\t %s \n\t %s \n\t \n\t %s \n\n" "$IP" "$WWW_SAS_WHITE_LIST" "$MOD_SECURITY_WWWSAS_CONF" "$MOD_SECURITY_WWWSAS_WLST" "$MOD_EVASIVE_WWWSAS_CONF"
+
+    # Attempt to remove iptables rule
+    /sbin/iptables -D "$WWW_SAS_IPTBL_CHAIN" -w -s "$IP" -j ACCEPT
+    eval "$WWW_SAS_IPTABLES_SAVE"
+
+    # Backup ModEvasive lock file
+    find "$MOD_EVASIVE_LOG_DIR" -maxdepth 1 -type f -exec mv {} "$MOD_EVASIVE_LOG_DIR_BAK" \;
+
+    exit 0
+
 # If the $IP is a member of the $WWW_SAS_WHITE_LIST :: Call in AUTO Mode (grep -q "$IP" "$WWW_SAS_WHITE_LIST" - doesn't work)
-if [[ -n $(grep -wo "$IP" "$WWW_SAS_WHITE_LIST") ]] && [[ " ${AGENTS[*]} " == *" ${AGENT} "* ]]
+elif [[ -n $(grep -wo "$IP" "$WWW_SAS_WHITE_LIST") ]] && [[ " ${AGENTS[*]} " == *" ${AGENT} "* ]]
 then
 
     # Output a message and go forward to send notification email
@@ -237,34 +264,7 @@ then
 
     exit 0
 
-# Add $IP to the ACCEPT (WHITE) List, syntax: www-security-assistant.bash <IP> --ACCEPT 'log notes'"
-elif [[ $AGENT == "--ACCEPT-REMOVE" ]]
-then
-
-    # Remove the entry from '/etc/www-security-assistant/www-security-assistant.white.list'
-    sed -i "/$IP/d" "$WWW_SAS_WHITE_LIST" >/dev/null 2>&1
-    
-    # Remove the entry from '/etc/modsecurity/wwwsas-rules.conf'
-    sed -i "s/,$IP//" "$MOD_SECURITY_WWWSAS_CONF" >/dev/null 2>&1
-
-    # Remove the entry from '/etc/www-security-assistant/modsecurity-ip.white.list'
-    sed -i "/$IP/d" "$MOD_SECURITY_WWWSAS_WLST" >/dev/null 2>&1
-
-    # Remove the entry from '/etc/apache2/mods-available/evasive.conf'
-    sed -i "s/\s$IP//" "$MOD_EVASIVE_WWWSAS_CONF" >/dev/null 2>&1
-
-    printf "IP '%s' is removed from the following files: \n\t %s \n\t %s \n\t %s \n\t \n\t %s" "$IP" "$WWW_SAS_WHITE_LIST" "$MOD_SECURITY_WWWSAS_CONF" "$MOD_SECURITY_WWWSAS_WLST" "$MOD_EVASIVE_WWWSAS_CONF"
-
-    # Attempt to remove iptables rule
-    /sbin/iptables -D "$WWW_SAS_IPTBL_CHAIN" -w -s "$IP" -j ACCEPT
-    eval "$WWW_SAS_IPTABLES_SAVE"
-
-    # Backup ModEvasive lock file
-    find "$MOD_EVASIVE_LOG_DIR" -maxdepth 1 -type f -exec mv {} "$MOD_EVASIVE_LOG_DIR_BAK" \;
-
-    exit 0
-
-# Add $IP to the ACCEPT (WHITE) List, syntax: www-security-assistant.bash <IP> --ACCEPT 'log notes'"
+# Add $IP to the ACCEPT (WHITE) List, syntax: www-security-assistant.bash <IP> --ACCEPT 'log notes'
 elif [[ $AGENT =~ "--ACCEPT" ]]
 then
 
@@ -293,7 +293,7 @@ then
     fi
 
     # Output info
-    printf "\n\nThe IP address '%s' is added to the following files: \n\t %s \n\t %s \n\t %s" "$IP" "$WWW_SAS_WHITE_LIST" "$MOD_SECURITY_WWWSAS_CONF" "$MOD_SECURITY_WWWSAS_WLST"
+    printf "\n\nThe IP address '%s' is added to the following files: \n\t %s \n\t %s \n\t %s \n\t %s \n\n" "$IP" "$WWW_SAS_WHITE_LIST" "$MOD_SECURITY_WWWSAS_CONF" "$MOD_SECURITY_WWWSAS_WLST" "$MOD_EVASIVE_WWWSAS_CONF"
 
     # Backup ModEvasive lock file
     find "$MOD_EVASIVE_LOG_DIR" -maxdepth 1 -type f -exec mv {} "$MOD_EVASIVE_LOG_DIR_BAK" \;

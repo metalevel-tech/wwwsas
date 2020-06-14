@@ -110,7 +110,7 @@ MOD_SECURITY_WHITELIST_FILE="${MOD_SECURITY_OWASP_CRS_DIR}/rules/RESPONSE-999-EX
 SECURITY_RULE_PARSE_METHOD='latest'	# Use the latest rule id in the file $MOD_SECURITY_WHITELIST_FILE as base for the new rule id
 #SECURITY_RULE_PARSE_METHOD='greatest'	# Use the greatest rule id in the file $MOD_SECURITY_WHITELIST_FILE as base for the new rule id
 
-# ModSecurity and ModEvasive whitelist configuration files 
+# ModSecurity and ModEvasive whitelist configuration files
 MOD_SECURITY_WWWSAS_CONF="/etc/modsecurity/wwwsas-rules.conf"
 MOD_SECURITY_WWWSAS_WLST="${WORK_DIR}/modsecurity-ip.white.list"
 MOD_EVASIVE_WWWSAS_CONF="/etc/apache2/mods-available/evasive.conf"
