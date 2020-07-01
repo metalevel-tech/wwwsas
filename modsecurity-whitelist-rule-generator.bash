@@ -209,8 +209,10 @@ else
 	head_message
 	echo; echo -e "${YEL}"
 	rule_number
-	rule_info
-	rule_body
+	#rule_info
+	#rule_body
+	/usr/bin/php -r '$arg1 = $argv[1];echo rawurldecode($arg1);' "$(rule_info)"
+        /usr/bin/php -r '$arg1 = $argv[1];echo rawurldecode($arg1);' "$(rule_body)"
 	echo; echo -e "${NCL}"
 	edit_rules_and_rload_apache2
 	clear_temp_and_log
