@@ -40,10 +40,14 @@ printf '\n\n*****\nSECURITY LOG from %s on %s : modsecurity-assistant.bash >>\n-
 
 # Apply some filter to $REQUEST_URI, for example substitute the latin letters "X" and "x" with the cyrillic letters "Х" and "х".
 # This step solves an old issue and it is not longer needed - but why not :)
-REQUEST_URI_MOD="$(echo "$REQUEST_URI" | sed -e 's/0/О/g' -e 's/p/р/g' -e 's/P/Р/g' -e 's/x/х/g' -e 's/X/Х/g' -e 's/A/А/g' -e 's/a/а/g')"
+#REQUEST_URI_MOD="$(echo "$REQUEST_URI" | sed -e 's/0/О/g' -e 's/p/р/g' -e 's/P/Р/g' -e 's/x/х/g' -e 's/X/Х/g' -e 's/A/А/g' -e 's/a/а/g')"
 
 # Compose the log note
-ATTACK_INFO="Attacking IP: ${REMOTE_ADDR}${MY_DIVIDER}Unique ID: ${UNIQUE_ID}${MY_DIVIDER}Our Server: ${SERVER_NAME}${MY_DIVIDER}Request URI: ${REQUEST_URI_MOD}${MY_DIVIDER}Arguments: ${ARGS}${MY_DIVIDER}"
+#ATTACK_INFO="Attacking IP: ${REMOTE_ADDR}${MY_DIVIDER}Unique ID: ${UNIQUE_ID}${MY_DIVIDER}Our Server: ${SERVER_NAME}${MY_DIVIDER}Request URI: ${REQUEST_URI_MOD}${MY_DIVIDER}Arguments: ${ARGS}${MY_DIVIDER}"
+ATTACK_INFO="Attacking IP: ${REMOTE_ADDR}${MY_DIVIDER}Unique ID: ${UNIQUE_ID}${MY_DIVIDER}Our Server: ${SERVER_NAME}${MY_DIVIDER}Request URI: ${REQUEST_URI}${MY_DIVIDER}Arguments: ${ARGS}${MY_DIVIDER}"
+
+# This is replacement for REQUEST_URI_MOD
+ATTACK_INFO="$(/usr/bin/php -r '$arg1 = $argv[1];echo rawurldecode($arg1);' "$ATTACK_INFO")"
 
 # Call WWW Security Assistant Script
 exec sudo "$WWW_SAS_EXEC" "$REMOTE_ADDR" 'ModSecurity' "$ATTACK_INFO" "$RULE_ID" "$REQUEST_URI" >> "$WWW_SAS_EXEC_LOG" 2>&1 &
