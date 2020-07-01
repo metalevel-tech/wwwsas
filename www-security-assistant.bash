@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # Name:    www-security-assistant.bash
 # Summary: This is the main script of the the project of the same name.
