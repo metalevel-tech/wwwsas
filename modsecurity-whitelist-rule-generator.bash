@@ -128,7 +128,7 @@ rule_body() {
 # This function is used by the 'active-rules' mode and oputput only the ModSecurity's RuleIDs, active within the thread
 active_rules() {
 
-	printf '<b>ModSecurity thread parameters: RuleId, Tag(s)</b>\n' "$UNIQUE_ID"
+	printf '<b>ModSecurity thread parameters: RuleId, Tag(s)</b>\n' #"$UNIQUE_ID"
 
 	# Output also the files, that contain the rules
 	#printf '<b>ModSecurity thread parameters: RuleId, Tag(s); File(s) <span style="color: transparent; font-size: 6px;">Unique_ID: %s</span></b>\n' "$UNIQUE_ID"
