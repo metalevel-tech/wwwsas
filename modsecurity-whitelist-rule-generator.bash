@@ -121,7 +121,7 @@ rule_info() {
 
 rule_body() {
 	printf "SecRule REQUEST_URI \"^%s$\" \\" "$REQUEST_URI_FILTRED"; echo
-	printf "\t\"id:'%s', t:none, phase:1, pass, \\" "$RULE_NUMBER"; echo
+	printf "\t\"id:'%s', t:none, phase:1, pass, nolog, \\" "$RULE_NUMBER"; echo
 	sed -r -n 's/.*\[id \"([0-9]+)\"\].*$/\t ctl:ruleRemoveById=\1\, \\/p' "$TMP_FILE" | sort -u | sed '$ s/\, \\/\"/'
 }
 
