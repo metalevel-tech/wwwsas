@@ -299,7 +299,7 @@ then
     find "$MOD_EVASIVE_LOG_DIR" -maxdepth 1 -type f -exec mv {} "$MOD_EVASIVE_LOG_DIR_BAK" \;
 
     # Reload the Apache's configuration
-    /usr/bin/systemctl reload apache2.service
+    /usr/bin/systemctl reload apache2.service 2>/dev/null || /bin/systemctl reload apache2.service 2>/dev/null 
     
     exit 0
 
