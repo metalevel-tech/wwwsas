@@ -363,6 +363,7 @@ Note: on some VPSes there is a problem with the scripts placed in `/etc/network/
 * [Iptables status slow? on FedoraForum][12]
 * [**Have iptables run command/script on new connection attempt**](https://unix.stackexchange.com/a/235451/201297)
 * [Secure an Ubuntu OpenSSH server from Brute force attacks but without a firewall or SSH key pair?](https://askubuntu.com/a/904004/566421)
+* [**Block a country with iptables**](https://askubuntu.com/questions/868334/block-china-with-iptables)
 
 ## What is included in the repository about Iptables
 
