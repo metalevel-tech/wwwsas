@@ -492,9 +492,9 @@ printf '<style>\n'
 cat "$WWW_SAS_MAIL_STYLE_CSS"
 printf '</style>\n'
 printf '\n</head>\n<body style="font-family: monospace; max-width: 720px;">\n'
-printf '\n<h3 style="color: #000000;"><a href="https://%s" style="text-decoration: none;color: #000000;">%s</a> %s</h3>\n' "${HOSTNAME^^}" "${HOSTNAME^^}" "$AGENT"
+printf '\n<h3 style="color:#000000;">%s %s</h3>\n' "${HOSTNAME^^}" "$AGENT"
 
-IP_REFERENCE="<a href='http://$IP'>$IP</a> | <a href='https://www.abuseipdb.com/check/$IP'>AbuseIPDB</a> | <a href='https://geoipinfo.org/?ip=$IP'>GeoIPInfo</a>"
+IP_REFERENCE="<a href=\"http://$IP\">$IP</a> | <a href=\"https://www.abuseipdb.com/check/$IP\">AbuseIPDB</a> | <a href=\"https://geoipinfo.org/?ip=$IP\">GeoIPInfo</a>"
 
 if [[ $AGENT == "$AGENT_MODSEC" ]]
 then
@@ -505,6 +505,9 @@ then
 
     # Extract the value of the UNIQUE_ID used several tiles below
     UNIQUE_ID="$(echo "$NOTES_EMAIL" | sed -r -n 's/^Unique ID: (.*)$/\1/p')"
+
+    # Cyrillic URI Translate
+    NOTES_EMAIL="$(/usr/bin/php -r '$arg1 = $argv[1];echo rawurldecode($arg1);' "$NOTES_EMAIL")"
 
     printf "\n<pre class=\"info\">\n%b\n</pre>\n" "${NOTES_EMAIL}"
 
