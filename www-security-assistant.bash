@@ -501,7 +501,7 @@ then
 
     printf '\n<p style="margin-bottom: 5px;">New transgression has been detected. \n<br>Source: %s</p>\n' "$IP_REFERENCE"
     # Add <a href=..> to `Our server`
-    NOTES_EMAIL="$(echo "$NOTES_EMAIL" | sed -r 's/^(Our Server: )(.*)$/\1<a href="\2">\2<\/a>/')"
+    NOTES_EMAIL="$(echo "$NOTES_EMAIL" | sed -r 's/^(Our Server: )(.*)$/\1<a href="http://\2">\2<\/a>/')"
 
     # Extract the value of the UNIQUE_ID used several tiles below
     UNIQUE_ID="$(echo "$NOTES_EMAIL" | sed -r -n 's/^Unique ID: (.*)$/\1/p')"
