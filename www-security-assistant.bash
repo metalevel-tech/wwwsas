@@ -494,8 +494,7 @@ printf '</style>\n'
 printf '\n</head>\n<body style="font-family: monospace; max-width: 720px;">\n'
 printf '\n<h3 style="color: #000000;"><a href="https://%s" style="text-decoration: none;color: #000000;">%s</a> %s</h3>\n' "${HOSTNAME^^}" "${HOSTNAME^^}" "$AGENT"
 
-# bux fix href='www..' ->  href='https://www.'
-IP_REFERENCE="<a href='https://$IP'>$IP</a> | <a href='https://www.abuseipdb.com/check/$IP'>AbuseIPDB</a> | <a href='https://geoipinfo.org/?ip=$IP'>GeoIPInfo</a>"
+IP_REFERENCE="<a href='http://$IP'>$IP</a> | <a href='https://www.abuseipdb.com/check/$IP'>AbuseIPDB</a> | <a href='https://geoipinfo.org/?ip=$IP'>GeoIPInfo</a>"
 
 if [[ $AGENT == "$AGENT_MODSEC" ]]
 then
