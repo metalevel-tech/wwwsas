@@ -27,7 +27,6 @@
 # ACTION_TYPE='categories'        - outputs all available report categories.
 # ACTION_TYPE='pull-ip-data'      - outputs full report about the IP, if in the AbuseIPDB has record(s) for it. This is the default action.
 # ACTION_TYPE='pull-ip-data-html' - same as the above, but used by the main script
-# ACTION_TYPE='pull-ip-data-table'- used to generate a table within while/ for loop: for ip in "$IPS[@]"; do wwwsas-abuseipdb "$IP" 'pull-ip-data-table'; done
 # ACTION_TYPE='analyse-ip'        - outputs the AbuseScore index only, mainly used by 'www-security-assistant.bash'.
 # ACTION_TYPE='push-ip-data'      - outputs the number of AbuseScore records only, mainly used by 'www-security-assistant.bash'.
 # ACTION_TYPE='push-ip-data-html' - same as the above, but used by the main script
@@ -35,7 +34,6 @@
 # Usage from the CLI
 # wwwsas-abuseipdb '' 'categories'
 # wwwsas-abuseipdb 127.0.0.1 'pull-ip-data'
-# wwwsas-abuseipdb 127.0.0.1 'pull-ip-data-table'
 # wwwsas-abuseipdb 127.0.0.1 'analyse-ip'
 # wwwsas-abuseipdb 127.0.0.1 'push-ip-data' '21,15' 'Comment'
 
@@ -116,7 +114,7 @@ pull_ip_data() {
         # Example API V1: https://www.abuseipdb.com/check/[IP]/json?key=[API_KEY]&days=[DAYS]
         #AbuseIPDB_IP_DATA="$(wget -O - -o /dev/null "https://www.abuseipdb.com/check/${IP}/json?key=${AbuseIPDB_APIKEY}&days=365" | sed -e 's/^\[//' -e 's/\]$//')"
 
-    	# Example API V2: curl -G https://api.abuseipdb.com/api/v2/check --data-urlencode "ipAddress=127.0.0.1" -d maxAgeInDays=90 -d verbose -H "Key: $YOUR_API_KEY" -H "Accept: application/json"
+	# Example API V2: curl -G https://api.abuseipdb.com/api/v2/check --data-urlencode "ipAddress=127.0.0.1" -d maxAgeInDays=90 -d verbose -H "Key: $YOUR_API_KEY" -H "Accept: application/json"
         AbuseIPDB_IP_DATA="$(curl -G -s https://api.abuseipdb.com/api/v2/check --data-urlencode "ipAddress=${IP}" -d maxAgeInDays=365 -d verbose -H "Key: ${AbuseIPDB_APIKEY}" -H "Accept: application/json")"
 
         #AbuseIPDB_lastReportedAt="$(echo "$AbuseIPDB_IP_DATA" | sed -nr 's/^.*"lastReportedAt":(.*)}}.*$/\1/p')"
@@ -224,18 +222,6 @@ then
     echo "Category List:  $AbuseIPDB_categoryList"
     echo "Category Verb.: $AbuseIPDB_categoryListVerbose"
     echo "Last Report At: $AbuseIPDB_lastReportedAt"
-
-elif   [[ $ACTION_TYPE == 'pull-ip-data-table' ]]
-then
-
-    pull_ip_data
-
-    printf '%s\t%-32s%s\t%s\t%s\t%s\t%s\n' "$AbuseIPDB_countryCode" "$AbuseIPDB_countryName" "$AbuseIPDB_ipAddress" "$AbuseIPDB_totalReports" "$AbuseIPDB_abuseConfidenceScore" "$AbuseIPDB_categoryCount" "$AbuseIPDB_isWhitelisted"
-
-elif   [[ $ACTION_TYPE == 'pull-ip-data-table-header' ]]
-then
-
-    printf 'Code\tCoutry Name\tIP Address\tReports\tScore\tCatCnt\tWhitelisted\n'
 
 elif [[ $ACTION_TYPE == 'pull-ip-data-html' ]]
 then
