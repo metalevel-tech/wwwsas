@@ -16,6 +16,7 @@
 [[ -x /usr/bin/find ]] || { echo "Please, install 'find'"; exit 0; }
 [[ -x /usr/bin/mail ]] || { echo "Please, install 'mail' command"; exit 0; }
 [[ -x /usr/bin/git ]] || { echo "Please, install 'git'"; exit 0; }
+[[ -x /usr/bin/git ]] || { echo "Please, install 'jq'"; exit 0; }
 [[ -x /usr/bin/mail ]] || { echo "Please, install 'pstfix' or some similar package. Your system should ne able to send emails via the command 'mail'"; exit 0; }
 [[ -x /usr/bin/colordiff ]] || { echo "Please, install 'colordiff'"; exit 0; }
 [[ -x /usr/bin/wget ]] || { echo "Please, install 'wget'"; exit 0; }
