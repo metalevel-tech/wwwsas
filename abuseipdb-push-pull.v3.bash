@@ -35,7 +35,6 @@
 # Usage from the CLI
 # wwwsas-abuseipdb '' 'categories'
 # wwwsas-abuseipdb 127.0.0.1 'pull-ip-data'
-# wwwsas-abuseipdb 127.0.0.1 'pull-ip-data-table-header'
 # wwwsas-abuseipdb 127.0.0.1 'pull-ip-data-table'
 # wwwsas-abuseipdb 127.0.0.1 'analyse-ip'
 # wwwsas-abuseipdb 127.0.0.1 'push-ip-data' '21,15' 'Comment'
@@ -120,11 +119,8 @@ pull_ip_data() {
     	# Example API V2: curl -G https://api.abuseipdb.com/api/v2/check --data-urlencode "ipAddress=127.0.0.1" -d maxAgeInDays=90 -d verbose -H "Key: $YOUR_API_KEY" -H "Accept: application/json"
         AbuseIPDB_IP_DATA="$(curl -G -s https://api.abuseipdb.com/api/v2/check --data-urlencode "ipAddress=${IP}" -d maxAgeInDays=365 -d verbose -H "Key: ${AbuseIPDB_APIKEY}" -H "Accept: application/json")"
 
-        AbuseIPDB_lastReportedAt="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .reportedAt' | sed 's/"//g')"
-        if [[ $AbuseIPDB_lastReportedAt == 'null' ]]
-        then
-            AbuseIPDB_lastReportedAt="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .lastReportedAt' | sed 's/"//g')"
-        fi
+        #AbuseIPDB_lastReportedAt="$(echo "$AbuseIPDB_IP_DATA" | sed -nr 's/^.*"lastReportedAt":(.*)}}.*$/\1/p')"
+        AbuseIPDB_lastReportedAt="$(echo "$AbuseIPDB_IP_DATA" | sed -nr 's/^.*"(reportedAt|lastReportedAt)":(.*)}}.*$/\2/p')"
 
         if [[ $AbuseIPDB_lastReportedAt =~ 'null' ]]
         then
@@ -144,28 +140,19 @@ pull_ip_data() {
 
         else
 
-            #echo "$AbuseIPDB_IP_DATA" | jq
-            #echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .lastReportedAt'    | sed 's/"//g'
-            #echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .reportedAt'    | sed 's/"//g'
-            #echo '---::---'
+            AbuseIPDB_ipAddress="$(echo "$AbuseIPDB_IP_DATA" | sed -nr 's/^.*"ipAddress"\:"([0-9\.]+)".*$/\1/p')"
+            AbuseIPDB_totalReports="$(echo "$AbuseIPDB_IP_DATA" | sed -nr 's/^.*"totalReports"\:([0-9]+).*$/\1/p')"
+            #AbuseIPDB_countryName="$(echo "$AbuseIPDB_IP_DATA" | sed -nr 's#^.*"countryName":"([a-z A-Z]+)".*$#\1#p')"
+            AbuseIPDB_countryName="$(echo "$AbuseIPDB_IP_DATA" | sed -nr 's#^.*"countryName":"([a-z A-Z'\'',]+)".*$#\1#p')"
+            AbuseIPDB_countryCode="$(echo "$AbuseIPDB_IP_DATA" | sed -nr 's#^.*"countryCode":"([a-z A-Z]+)".*$#\1#p')"
+            AbuseIPDB_abuseConfidenceScore="$(echo "$AbuseIPDB_IP_DATA" | sed -nr 's#^.*"abuseConfidenceScore":([0-9]+),.*$#\1#p')"
 
-            AbuseIPDB_ipAddress="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .ipAddress' | sed 's/\"//g')"
-            AbuseIPDB_totalReports="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .totalReports')"
-            AbuseIPDB_numDistinctUsers="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .numDistinctUsers')"
-            AbuseIPDB_countryName="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .countryName' | sed 's/\"//g')"
-            AbuseIPDB_countryCode="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .countryCode' | sed 's/\"//g')"
-            AbuseIPDB_abuseConfidenceScore="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .abuseConfidenceScore')"
-            AbuseIPDB_isWhitelisted="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .isWhitelisted')"
-            AbuseIPDB_isPublic="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .isPublic')"
-            AbuseIPDB_ipVersion="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .ipVersion')"
+            AbuseIPDB_isWhitelisted="$(echo "$AbuseIPDB_IP_DATA" | sed -nr 's#^.*"isWhitelisted":([a-z]+),.*$#\1#p')"
+            AbuseIPDB_isPublic="$(echo "$AbuseIPDB_IP_DATA" | sed -nr 's#^.*"isPublic":([a-z]+),.*$#\1#p')"
+            AbuseIPDB_ipVersion="$(echo "$AbuseIPDB_IP_DATA" | sed -nr 's#^.*"ipVersion":([0-9]),.*$#\1#p')"
 
-            AbuseIPDB_usageType="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .usageType' | sed 's/\"//g')"
-            AbuseIPDB_isp="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .isp' | sed 's/\"//g')"
-            AbuseIPDB_domain="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .domain' | sed 's/\"//g')"
-            AbuseIPDB_hostnames="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .hostnames[]' | sed 's/\"//g' | tr '\n' ' ')"
-
-            AbuseIPDB_categoryList="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .reports[] | .categories[]' | sort -u | tr '\n' ' ')"
-            AbuseIPDB_categoryCount="$(echo "$AbuseIPDB_IP_DATA" | /usr/bin/jq '.data | .reports[] | .categories[]' | sort -u | wc -l)"
+            AbuseIPDB_categoryList="$(echo "$AbuseIPDB_IP_DATA" | sed 's/^.*"reports"\:\[{/{/g' | sed 's/},{/\n/g' | sed -rn 's/.*"categories":\[([0-9,]+)\],.*/\1/p' | sed 's#\,#\n#g' | sort -u -g | sed ':a;N;$!ba;s/\n/ /g')"
+            AbuseIPDB_categoryCount="$([[ ! -z $AbuseIPDB_categoryList ]] && echo "$AbuseIPDB_categoryList" | sed 's/ /\n/g' | wc -l)"
             AbuseIPDB_categoryListVerbose="$(for CATEGORY in $AbuseIPDB_categoryList; do echo -n "${AbuseIPDB_CATEGORY[$CATEGORY]}, "; done | sed 's/, $//')"
 
         fi
@@ -227,7 +214,6 @@ then
 
     echo "IP Address:     $AbuseIPDB_ipAddress"
     echo "Total Reports:  $AbuseIPDB_totalReports (Limit: $AbuseIPDB_totalReportsLimit)"
-    echo "Distinct Users: $AbuseIPDB_numDistinctUsers"
     echo "Country Name:   $AbuseIPDB_countryName"
     echo "Country Code:   $AbuseIPDB_countryCode"
     echo "Abuse Score:    $AbuseIPDB_abuseConfidenceScore (Limit: $AbuseIPDB_abuseConfidenceScoreLimit)"
@@ -237,11 +223,19 @@ then
     echo "Category Count: $AbuseIPDB_categoryCount (Limit: $AbuseIPDB_CategoryCountLimit)"
     echo "Category List:  $AbuseIPDB_categoryList"
     echo "Category Verb.: $AbuseIPDB_categoryListVerbose"
-    echo "Usage Type:     $AbuseIPDB_usageType"
-    echo "ISP:            $AbuseIPDB_isp"
-    echo "Domain:         $AbuseIPDB_domain"
-    echo "Hostnames:      $AbuseIPDB_hostnames"
     echo "Last Report At: $AbuseIPDB_lastReportedAt"
+
+elif   [[ $ACTION_TYPE == 'pull-ip-data-table' ]]
+then
+
+    pull_ip_data
+
+    printf '%s\t%-32s%s\t%s\t%s\t%s\t%s\n' "$AbuseIPDB_countryCode" "$AbuseIPDB_countryName" "$AbuseIPDB_ipAddress" "$AbuseIPDB_totalReports" "$AbuseIPDB_abuseConfidenceScore" "$AbuseIPDB_categoryCount" "$AbuseIPDB_isWhitelisted"
+
+elif   [[ $ACTION_TYPE == 'pull-ip-data-table-header' ]]
+then
+
+    printf 'Code\tCoutry Name\tIP Address\tReports\tScore\tCatCnt\tWhitelisted\n'
 
 elif [[ $ACTION_TYPE == 'pull-ip-data-html' ]]
 then
@@ -251,7 +245,6 @@ then
 
     echo "<b>AbuseIPDB data report for $AbuseIPDB_ipAddress</b>"
     echo "Total Reports:  <b>$AbuseIPDB_totalReports</b> (Limit: $AbuseIPDB_totalReportsLimit)"
-    echo "Distinct Users: $AbuseIPDB_numDistinctUsers"
     echo "Country Name:   <b>$AbuseIPDB_countryName</b>"
     echo "Country Code:   <b>$AbuseIPDB_countryCode</b>"
     echo "Abuse Score:    <b>$AbuseIPDB_abuseConfidenceScore</b> (Limit: $AbuseIPDB_abuseConfidenceScoreLimit)"
@@ -259,24 +252,6 @@ then
     echo "Category Count: <b>$AbuseIPDB_categoryCount</b> (Limit: $AbuseIPDB_CategoryCountLimit)"
     echo "Category List:  $AbuseIPDB_categoryList"
     echo "Category Verb.: $AbuseIPDB_categoryListVerbose"
-    echo "Usage Type:     $AbuseIPDB_usageType"
-    echo "ISP:            $AbuseIPDB_isp"
-    echo "Domain:         $AbuseIPDB_domain"
-    echo "Hostnames:      $AbuseIPDB_hostnames"
-
-elif   [[ $ACTION_TYPE == 'pull-ip-data-table' ]]
-then
-
-    pull_ip_data
-
-    # These variables are not included: $AbuseIPDB_usageType $AbuseIPDB_isp $AbuseIPDB_domain $AbuseIPDB_hostnames
-    printf '%s\t%-32s%s\t%s\t%s\t%s\t%s\t%s\n' "$AbuseIPDB_countryCode" "$AbuseIPDB_countryName" "$AbuseIPDB_ipAddress" "$AbuseIPDB_totalReports" "$AbuseIPDB_numDistinctUsers" "$AbuseIPDB_abuseConfidenceScore" "$AbuseIPDB_categoryCount" "$AbuseIPDB_isWhitelisted"
-
-elif   [[ $ACTION_TYPE == 'pull-ip-data-table-header' ]]
-then
-
-    # These variables are not included: $AbuseIPDB_usageType $AbuseIPDB_isp $AbuseIPDB_domain $AbuseIPDB_hostnames
-    printf 'Code\tCoutry Name\tIP Address\tReports\tUsrers\tScore\tCatCnt\tWhitelisted\n'
 
 elif [[ $ACTION_TYPE == 'analyse-ip' ]]
 then
