@@ -115,6 +115,7 @@ This mode accept the following options:
     ````
   If there is any configured HTTPS service its [TLS certificate can be used within the Postfix service][5]. Also see [this](https://askubuntu.com/a/732782/566421) and [this](https://askubuntu.com/q/1031366/566421) Q&Ahow to use `/.mailrc`.
 * `sudo apt install at` - see [`man at`][6].
+* `sudo apt install jq` - json parse tool.
 
 ### References
 
