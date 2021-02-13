@@ -1,0 +1,61 @@
+<?php
+if (empty($_GET)) {
+	header("Location: /");
+	return true;
+}
+elseif (isset($_GET['auth']))
+{
+	$auth = $_GET['auth'];
+
+    $token  = substr($auth, -6);
+    $passwd = substr($auth, 0, -6);
+    $passwd_sha = hash('sha256' , $passwd);
+
+    $auth = $passwd_sha . $token;
+    //echo 'Success: ' . $auth . '<br>\n';
+
+	$code = exec('/usr/local/bin/wwwsas-oathtool-code-paswd.sh');
+
+	if ( $code === $auth )
+	{
+		if (isset($_GET['ip']) && $_GET['ip'] != '')
+		{
+			$IP = $_GET['ip'];
+		} else {
+			$IP = $_SERVER['REMOTE_ADDR'];
+		}
+
+		if (isset($_GET['note']) && $_GET['note'] != '')
+		{
+			$note = $_GET['note'] . ' @web_cmd';
+		} else {
+			$note = '@web_cmd';
+		}
+
+		if (isset($_GET['cmd']) && $_GET['cmd'] == 'accept')
+		{
+            header('Content-type: text/html');
+			$cmd = 'sudo /etc/www-security-assistant/www-security-assistant.bash ' . $IP . ' --ACCEPT ' . "'$note'";
+			$output = shell_exec($cmd);
+			echo nl2br('<html><head></head><body><pre>' . $cmd . $output . '</pre></body></html>');
+		}
+		elseif (isset($_GET['cmd']) && $_GET['cmd'] == 'remove')
+		{
+            header('Content-type: text/html');
+			$cmd = 'sudo /etc/www-security-assistant/www-security-assistant.bash ' . $IP . ' --ACCEPT-REMOVE';
+			$output = shell_exec($cmd);
+			echo nl2br('<html><head></head><body><pre>' . $cmd . $output . '</pre></body></html>');
+		}
+	}
+	else
+	{
+		header("Location: /");
+		return true;
+	}
+}
+else
+{
+        header("Location: /");
+        return true;
+}
+?>

@@ -1,6 +1,6 @@
 # Issue commands to WWWSAS via the web interface
 
-The intenition of these scripts is to provide a way to add/remove (accept/remove) an IP address to the WWWSAS's WihiteList.
+The intenition of these scripts is to provide a way to add/remove (accept/remove) an IP address to the WWWSAS's whitelist.
 
 ## Dependencies
 
@@ -15,15 +15,16 @@ The intenition of these scripts is to provide a way to add/remove (accept/remove
 2. Do the following commands:
 
     ```bash
-    sudo cp "$IP/www-security-assistant/file-system/web-commands/wwwsas-oathtool-code-paswd.sh" "/usr/local/bin/"
+    cd /etc/www-security-assistant/file-system/web-commands/
+
+    sudo cp wwwsas-oathtool-code-paswd.sh /usr/local/bin/
     sudo chmod +x /usr/local/bin/wwwsas-oathtool-code-paswd.sh
 
-    sudo ln -s "$IP/www-security-assistant/file-system/web-commands/wwwsas-web-commands.php" "/var/www/<example.com>/<wwwsas-cmd>.php"
+    sudo cp wwwsas-web-commands.php.example /var/www/"<example.com>"/"<wwwsas-cmd>.php"
     ```
 
    Where:
 
-   * `$IP` is the place where the WWWSAS bundle is located, by default it is `/etc`.
    * `<example.com>` is the (virtual host) location, according to your Apache's setup, at which you will call the script.
    * `<wwwsas-cmd>.php` is the way you will call the php script.
 
@@ -48,7 +49,7 @@ The script `wwwsas-web-commands.php` will accept the following `GET` arguments. 
     Where:
 
     * `password_` is your real password and `_` is a part of it!
-    * `654321` is a token code generate on the base of your TOTP 2FA SECRET.
+    * `654321` is a token code generate on the base of `YOUR_2FA_TOTP_SECRET`.
 
 * `cmd=` a command/option of `wwwsas` that will be executed, only `accept` and `remove` are available, e.g.:
 
@@ -63,9 +64,9 @@ The script `wwwsas-web-commands.php` will accept the following `GET` arguments. 
 
     When `ip=` is not supplied the script will get the client's IP address.
 
-* `note=` some notes that will be added into the WhiteList file.
+* `note=` some notes that will be added into the whitelist file.
 
-## *add/accept* examples:
+## *add/accept* examples
 
 1. `https://example.com/wwwsas-cmd.php?auth=password_654321&cmd=accept&note=some_notes`
 
@@ -73,8 +74,15 @@ The script `wwwsas-web-commands.php` will accept the following `GET` arguments. 
 
 3. `https://example.com/wwwsas-cmd.php?cmd=accept&note=my_mobile_isp&auth=password_654321`
 
-## *remove* examples:
+## *remove* examples
 
 1. `https://example.com/wwwsas-cmd.php?auth=password_654321&cmd=remove`
 
 2. `https://example.com/wwwsas-cmd.php?auth=password_654321&cmd=remove&ip=179.67.201.12`
+
+## Notes
+
+* This feature is optional and it is not included into the main SETUP script.
+
+* `/etc/www-security-assistant/` and `www-security-assistant.bash` are currently hardcoded in the php script.
+
