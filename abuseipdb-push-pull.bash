@@ -74,8 +74,8 @@ fi
 # -----------------------------
 
 AbuseIPDB_CATEGORY=('https://www.abuseipdb.com/categories')
-AbuseIPDB_CATEGORY[1]='[1] NA'
-AbuseIPDB_CATEGORY[2]='[2] NA'
+AbuseIPDB_CATEGORY[1]='[1] DNS Compromise'   # Altering DNS records resulting in improper redirection.
+AbuseIPDB_CATEGORY[2]='[2] DNS Poisoning'    # Falsifying domain server cache (cache poisoning).
 AbuseIPDB_CATEGORY[3]='[3] Fraud Orders'     # Fraudulent orders.
 AbuseIPDB_CATEGORY[4]='[4] DDoS Attack'      # Participating in distributed denial-of-service [usually part of botnet].
 AbuseIPDB_CATEGORY[5]='[5] FTP Brute-Force'  #
@@ -90,7 +90,7 @@ AbuseIPDB_CATEGORY[13]='[13] VPN IP'         # Conjunctive category.
 AbuseIPDB_CATEGORY[14]='[14] Port Scan'      # Scanning for open ports and vulnerable services.
 AbuseIPDB_CATEGORY[15]='[15] Hacking'        #
 AbuseIPDB_CATEGORY[16]='[16] SQL Injection'  # Attempts at SQL injection.
-AbuseIPDB_CATEGORY[17]='[17] Spoofing'       #
+AbuseIPDB_CATEGORY[17]='[17] Spoofing'       # Email sender spoofing.
 AbuseIPDB_CATEGORY[18]='[18] Brute-Force'    # Credential brute-force attacks on webpage logins and services like SSH, FTP, SIP, SMTP, RDP, etc.
 AbuseIPDB_CATEGORY[19]='[19] Bad Web Bot'    # Webpage scraping (for email addresses, content, etc) and crawlers that do not honor robots.txt.
 AbuseIPDB_CATEGORY[20]='[20] Exploited Host' # Host is likely infected with malware and being used for other attacks or to host malicious content.
