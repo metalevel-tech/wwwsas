@@ -89,17 +89,18 @@ printf "\n\n*****\nSECURITY LOG from %s on %s : %s : %s : %s\n\n" "$TIME" "$DATE
 # --------------
 
 # Remove $IP fromthe ACCEPT (WHITE) List, syntax: www-security-assistant.bash <IP> --ACCEPT-REMOVE
+# Ref.: https://backreference.org/2010/02/20/using-different-delimiters-in-sed/#comment-25216
 if [[ $AGENT == "--ACCEPT-REMOVE" ]]
 then
 
-    # Remove the entry from '/etc/www-security-assistant/www-security-assistant.white.list'
-    sed -i "#$IP#d" "$WWW_SAS_WHITE_LIST" >/dev/null 2>&1
+    # Remove the entry from '/etc/www-security-assistant/www-security-assistant.white.list' 
+    sed -i "\#$IP#d" "$WWW_SAS_WHITE_LIST" >/dev/null 2>&1
     
     # Remove the entry from '/etc/modsecurity/wwwsas-rules.conf'
     sed -i "s#,$IP##" "$MOD_SECURITY_WWWSAS_CONF" >/dev/null 2>&1
 
     # Remove the entry from '/etc/www-security-assistant/modsecurity-ip.white.list'
-    sed -i "#$IP#d" "$MOD_SECURITY_WWWSAS_WLST" >/dev/null 2>&1
+    sed -i "\#$IP#d" "$MOD_SECURITY_WWWSAS_WLST" >/dev/null 2>&1
 
     # Remove the entry from '/etc/apache2/mods-available/evasive.conf'
     sed -i "s#\s$IP##" "$MOD_EVASIVE_WWWSAS_CONF" >/dev/null 2>&1
