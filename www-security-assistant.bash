@@ -93,16 +93,16 @@ if [[ $AGENT == "--ACCEPT-REMOVE" ]]
 then
 
     # Remove the entry from '/etc/www-security-assistant/www-security-assistant.white.list'
-    sed -i "/$IP/d" "$WWW_SAS_WHITE_LIST" >/dev/null 2>&1
+    sed -i "#$IP#d" "$WWW_SAS_WHITE_LIST" >/dev/null 2>&1
     
     # Remove the entry from '/etc/modsecurity/wwwsas-rules.conf'
-    sed -i "s/,$IP//" "$MOD_SECURITY_WWWSAS_CONF" >/dev/null 2>&1
+    sed -i "s#,$IP##" "$MOD_SECURITY_WWWSAS_CONF" >/dev/null 2>&1
 
     # Remove the entry from '/etc/www-security-assistant/modsecurity-ip.white.list'
-    sed -i "/$IP/d" "$MOD_SECURITY_WWWSAS_WLST" >/dev/null 2>&1
+    sed -i "#$IP#d" "$MOD_SECURITY_WWWSAS_WLST" >/dev/null 2>&1
 
     # Remove the entry from '/etc/apache2/mods-available/evasive.conf'
-    sed -i "s/\s$IP//" "$MOD_EVASIVE_WWWSAS_CONF" >/dev/null 2>&1
+    sed -i "s#\s$IP##" "$MOD_EVASIVE_WWWSAS_CONF" >/dev/null 2>&1
 
     printf "IP '%s' is removed from the following files: \n\t %s \n\t %s \n\t %s \n\t %s \n\n" "$IP" "$WWW_SAS_WHITE_LIST" "$MOD_SECURITY_WWWSAS_CONF" "$MOD_SECURITY_WWWSAS_WLST" "$MOD_EVASIVE_WWWSAS_CONF"
 
@@ -272,13 +272,13 @@ then
     printf 'On %-10s at %-8s | This IP/CIDR was added to the ACCEPT (WHITE) List by @%s: %-18s \t| Notes: %s \n' "$DATE" "$TIME" "$RUN_USER" "$IP" "$NOTES" | tee -a "$WWW_SAS_WHITE_LIST"
     
     # Add an entry to '/etc/modsecurity/wwwsas-rules.conf'
-    sed -i "s/127\.0\.0\.1/127.0.0.1,$IP/" "$MOD_SECURITY_WWWSAS_CONF" >/dev/null 2>&1
+    sed -i "s#127\.0\.0\.1#127.0.0.1,$IP#" "$MOD_SECURITY_WWWSAS_CONF" >/dev/null 2>&1
 
     # Add an entry to '/etc/www-security-assistant/modsecurity-ip.white.list'
     echo "$IP" >> "$MOD_SECURITY_WWWSAS_WLST"
 
     # Add an entry to '/etc/apache2/mods-available/evasive.conf'
-    sed -i "s/127\.0\.0\.1/127.0.0.1 $IP/" "$MOD_EVASIVE_WWWSAS_CONF" >/dev/null 2>&1
+    sed -i "s#127\.0\.0\.1#127.0.0.1 $IP#" "$MOD_EVASIVE_WWWSAS_CONF" >/dev/null 2>&1
 
     # Add $IP to the ACCEPT (WHITE) List and add IPTables rule, syntax: www-security-assistant.bash <IP> --ACCEPT-CHAIN 'log notes'"
     if [[ "$AGENT" == "--ACCEPT-CHAIN" ]]
