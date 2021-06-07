@@ -134,7 +134,7 @@ elif [[ -n $(grep -wo "$IP" "$WWW_SAS_WHITE_LIST") ]] && [[ ! " ${AGENTS[*]} " =
 then
 
     # Output a message and exit
-    printf 'The IP address %s is a member of out withelist!\n\n' "$IP"
+    printf 'The IP address %s is a member of our withelist!\n\n' "$IP"
 
     # Backup ModEvasive lock file
     find "$MOD_EVASIVE_LOG_DIR" -maxdepth 1 -type f -exec mv {} "$MOD_EVASIVE_LOG_DIR_BAK" \;
