@@ -121,6 +121,7 @@
 * Fail2ban integration:
 
     * https://www.digitalocean.com/community/tutorials/how-to-protect-ssh-with-fail2ban-on-ubuntu-14-04
+    * [How to configure fail2ban to protect Apache HTTP server](https://www.xmodulo.com/configure-fail2ban-apache-http-server.html)
 
 ## Features, presented in the master branch, not presented in the [stable.v.5][8] branch
 
