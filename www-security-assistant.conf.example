@@ -3,7 +3,7 @@
 # Name:    www-security-assistant.conf.example - the default configuration file of the script bundle WWW Security Assistant.
 # Summary: This file is sourced You should create your own configuration file by removing of the '.example' extension.
 #          When 'www-security-assistant.conf' exists it will be sourced in 'www-security-assistant.bash' and other scripts from the bundle.
-# Home:    https://github.com/pa4080/www-security-assistant
+# Home:    https://github.com/metalevel-ad/www-security-assistant
 # Author:  Spas Z. Spasov <spas.z.spasov@gmail.com> (C) 2018
 
 

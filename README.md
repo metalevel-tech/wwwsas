@@ -135,13 +135,13 @@ The first step is to clone the repository. The default `$WORK_DIR` coded in the 
 
 ````bash
 cd /etc
-sudo git clone https://github.com/pa4080/www-security-assistant.git
+sudo git clone https://github.com/metalevel-ad/www-security-assistant.git
 ````
 
 You can choose another name of the script's directory and another location, because during the setup process, the `SETUP` script will parse the current location and will apply the necessary changes:
 
 ````bash
-sudo git clone https://github.com/pa4080/www-security-assistant.git /etc/wwwsas
+sudo git clone https://github.com/metalevel-ad/www-security-assistant.git /etc/wwwsas
 ````
 
 ### Step 2 :: Setup WWW Security Assistant script bundle
@@ -158,7 +158,7 @@ In addition the `SETUP` could handle two parameter:
 sudo ./SETUP [branch] [full-access]
 ````
 
-* `$1` - `branch` of `https://github.com/pa4080/www-security-assistant` (default: master).
+* `$1` - `branch` of `https://github.com/metalevel-ad/www-security-assistant` (default: master).
 
 * `$2` - when the second positional parameter is set to `full-access` some additional things will be done, that are not accessible on some virtualizations as OpenVZ (default: unset).
 
@@ -245,7 +245,7 @@ The `SETUP` will interactively guide you through the steps, described below, and
 
     The scripts `iptables-save.sh` and `iptables-restore.sh` uses the file `iptables.current-state.conf` to keep and read the latest state of the Iptables configuration. Also the main script `www-security-assistant.bash` calls `iptables-save.sh` each time when a new rule is issued.
 
-15. **Setup Ipset SAVE and RESTORE at REBOOT**. This step is similar as the above, but it will be processed, if you have run the `SETUP` script with the [`full-access`](https://github.com/pa4080/www-security-assistant#step-2--setup-www-security-assistant) option enabled. Currently the tool `ipset` is used within the script `iptables.basic-setup.local` to be created a [real port scanning protection](https://unix.stackexchange.com/a/407904/201297).
+15. **Setup Ipset SAVE and RESTORE at REBOOT**. This step is similar as the above, but it will be processed, if you have run the `SETUP` script with the [`full-access`](https://github.com/metalevel-ad/www-security-assistant#step-2--setup-www-security-assistant) option enabled. Currently the tool `ipset` is used within the script `iptables.basic-setup.local` to be created a [real port scanning protection](https://unix.stackexchange.com/a/407904/201297).
 
 ### Step 3 :: Post setup configuration
 
@@ -274,7 +274,7 @@ Once the `SETUP` is finish, you have to do few more things.
   Then check the file `www-security-assistant.white.list`.
 
 ---
-**Please keep reading. The rest of this tutorial is about the integration of the script `www-security-assistant.bash` and the whole system. More verbose explanations could be found in the file [README.OLD.md](https://github.com/pa4080/www-security-assistant/blob/stable.v.2/README.OLD.md).**
+**Please keep reading. The rest of this tutorial is about the integration of the script `www-security-assistant.bash` and the whole system. More verbose explanations could be found in the file [README.OLD.md](https://github.com/metalevel-ad/www-security-assistant/blob/stable.v.2/README.OLD.md).**
 
 **Most of the things (if not all) described below are already done by the `SETUP` script, but probably you may want to know what exactly is done.**
 
@@ -1094,7 +1094,7 @@ See also:
 * [Common Apache's Security Tips][1]
 
   [1]: https://httpd.apache.org/docs/2.4/misc/security_tips.html
-  [2]: https://github.com/pa4080/www-security-assistant/blob/master/www-security-assistant.bash
+  [2]: https://github.com/metalevel-ad/www-security-assistant/blob/master/www-security-assistant.bash
   [3]: https://stackoverflow.com/a/39248018/6543935
   [4]: https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-postfix-on-ubuntu-16-04
   [5]: https://help.ubuntu.com/lts/serverguide/postfix.html
@@ -1132,7 +1132,7 @@ See also:
   [37]: https://www.trustwave.com/Resources/SpiderLabs-Blog/ModSecurity-Advanced-Topic-of-the-Week--(Updated)-Exception-Handling/
   [38]: https://www.netnea.com/cms/apache-tutorial-8_handling-false-positives-modsecurity-core-rule-set/
   [39]: https://www.netnea.com/cms/apache-tutorial-7_including-modsecurity-core-rules/
-  [40]: https://github.com/pa4080/www-security-assistant/blob/master/modsecurity-assistant.bash
+  [40]: https://github.com/metalevel-ad/www-security-assistant/blob/master/modsecurity-assistant.bash
   [41]: https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual-%28v2.x%29#Variables
   [42]: https://gryzli.info/2015/12/25/modsecurity-using-lua-scripts-with-secrulescript/
   [43]: https://www.codeproject.com/Articles/574935/BlockplusIPplususingplusModSecurity
@@ -1144,7 +1144,7 @@ See also:
   [49]: https://www.digitalocean.com/community/tutorials/how-to-configure-logging-and-log-rotation-in-apache-on-an-ubuntu-vps
   [50]: https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual-%28v2.x%29#SecAuditEngine
   [51]: https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual-%28v2.x%29#secguardianlog
-  [52]: https://github.com/pa4080/www-security-assistant/blob/master/httpd-guardian.pl
+  [52]: https://github.com/metalevel-ad/www-security-assistant/blob/master/httpd-guardian.pl
   [53]: http://apache-tools.cvs.sourceforge.net/viewvc/apache-tools/apache-tools/
   [54]: https://httpd.apache.org/docs/2.4/logs.html
   [55]: http://httpd.apache.org/docs/current/mod/mod_log_config.html
@@ -1156,7 +1156,7 @@ See also:
   [61]: https://rietta.com/blog/2014/05/27/mod-security-and-fail2ban-as-an-intrusion-prevention-system/
   [62]: http://www.ocpsoft.org/opensource/antispam-filter-with-modsecurity-and-fail2ban/
   [63]: https://serverfault.com/a/628460/364207
-  [64]: https://github.com/pa4080/www-security-assistant/blob/master/httpd-custom-analyze.bash
+  [64]: https://github.com/metalevel-ad/www-security-assistant/blob/master/httpd-custom-analyze.bash
   [65]: https://en.wikipedia.org/wiki/HTTPS
   [66]: https://help.ubuntu.com/lts/serverguide/firewall.html
   [67]: https://askubuntu.com/a/900433/566421

@@ -4,7 +4,7 @@
 # Summary: Eexample port between Apache's logging mechanism and WWW Security Assistant.
 #          It is designed to analyze Apache's web server requests
 #	   through the piped logging mechanism (especially of modsec_guardian.log).
-# Home:    https://github.com/pa4080/www-security-assistant
+# Home:    https://github.com/metalevel-ad/www-security-assistant
 # Author:  Spas Z. Spasov <spas.z.spasov@gmail.com> (C) 2018
 #
 # This program is free software; you can redistribute it and/or modify it under the terms of the

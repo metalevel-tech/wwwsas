@@ -167,10 +167,10 @@
 * Configuration file.
 * Installation script (depreciated in the next version).
 
- [1]: https://github.com/pa4080/www-security-assistant/tree/ask_ubuntu
- [2]: https://github.com/pa4080/www-security-assistant/tree/stable.v.1
- [3]: https://github.com/pa4080/www-security-assistant/tree/stable.v.2
- [4]: https://github.com/pa4080/www-security-assistant/blob/stable.v.2/README.OLD.md
- [5]: https://github.com/pa4080/www-security-assistant/tree/stable.v.3
- [6]: https://github.com/pa4080/www-security-assistant/tree/stable.v.4
- [7]: https://github.com/pa4080/www-security-assistant/tree/stable.v.4/README.UPDATE.md
+ [1]: https://github.com/metalevel-ad/www-security-assistant/tree/ask_ubuntu
+ [2]: https://github.com/metalevel-ad/www-security-assistant/tree/stable.v.1
+ [3]: https://github.com/metalevel-ad/www-security-assistant/tree/stable.v.2
+ [4]: https://github.com/metalevel-ad/www-security-assistant/blob/stable.v.2/README.OLD.md
+ [5]: https://github.com/metalevel-ad/www-security-assistant/tree/stable.v.3
+ [6]: https://github.com/metalevel-ad/www-security-assistant/tree/stable.v.4
+ [7]: https://github.com/metalevel-ad/www-security-assistant/tree/stable.v.4/README.UPDATE.md

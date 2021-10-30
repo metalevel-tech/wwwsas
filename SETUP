@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# $1 - 'branch' (default: master) of https://github.com/pa4080/www-security-assistant
+# $1 - 'branch' (default: master) of https://github.com/metalevel-ad/www-security-assistant
 # $2 - 'full-access' (default: unset) with this option set some additional things will be done, that are not accessible on some virtualizations as OpenVZ.
 
 
@@ -259,7 +259,7 @@ echo -e "Please consider, this installation script will override all files," | t
 echo -e "within the current directory, that are not listed in the '.gitignore' file." | tee -a "$LOG_FILE"
 echo -ne "${YEL}"; echo -e "Your personal data (*.conf, *.log, *.local, *.php, etc.) will be kept!" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
 echo -e "The installer will checkout the '${YEL}${BRANCH}${NCL}' branch of WWW Security Assistant." | tee -a "$LOG_FILE"
-echo -e "For more information: https://github.com/pa4080/www-security-assistant" | tee -a "$LOG_FILE"
+echo -e "For more information: https://github.com/metalevel-ad/www-security-assistant" | tee -a "$LOG_FILE"
 echo -ne "${YEL}"; echo -e "If you want to checkout another branch, use: sudo ${0} '<branch-name>'" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
 
 DEFAULT_INPUT='Yes'

@@ -3,7 +3,7 @@
 # Name:    abuseipdb-push-pull-api-v1.bash - this is a deprecated version that communicates with API V1 of the service!
 # Summary: Push and pull data about malicious IPs througgh AbuseIPDB's API. It is a part of the project WWW Security Assistant and
 #          uses the main configuration file of the bundle to get the provided inside AbuseIPDB's API KEY.
-# Home:    https://github.com/pa4080/www-security-assistant
+# Home:    https://github.com/metalevel-ad/www-security-assistant
 #
 # Author:  Spas Z. Spasov <spas.z.spasov@gmail.com> (C) 2018
 #

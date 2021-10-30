@@ -2,7 +2,7 @@
 
 # Name:    modsecurity-assistant.bash - example port between ModSecurity and WWWSecurityAssistant.
 # Summary: Custom script designed to handle data from ModSecurity throug the 'exec' action.
-# Home:    https://github.com/pa4080/www-security-assistant
+# Home:    https://github.com/metalevel-ad/www-security-assistant
 # Author:  Spas Z. Spasov <spas.z.spasov@gmail.com> (C) 2018
 #
 # This program is free software; you can redistribute it and/or modify

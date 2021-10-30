@@ -4,7 +4,7 @@
 # Summary: Custom script that analyse the output of 'netstat' for THRESHOLD number of 'SYN_RECV' (or any other) TCP states per IP/PORT, etc.
 #          When a possible FLOOD Attack is detected it calls www-security-assistant.bash from the same packages.
 #          The script is designed to be executed via CRON Job as well as SHELL Command.
-# Home:    https://github.com/pa4080/www-security-assistant
+# Home:    https://github.com/metalevel-ad/www-security-assistant
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

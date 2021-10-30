@@ -97,7 +97,7 @@
 
 # --- Redistribution Notes by Spas Z. Spasov -----
 #
-#     This script is retributed under the same conditions as part of my hobby project WWW Security Assistant (https://github.com/pa4080/www-security-assistant)
+#     This script is retributed under the same conditions as part of my hobby project WWW Security Assistant (https://github.com/metalevel-ad/www-security-assistant)
 #     URL of the original Ivan Ristic's script: http://apache-tools.cvs.sourceforge.net/viewvc/apache-tools/apache-tools/httpd-guardian?revision=1.6&view=markup
 #
 #     To see how this script works:
