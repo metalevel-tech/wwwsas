@@ -4,7 +4,7 @@
 # Summary: This is the main script of the the project of the same name.
 #          It is designed to help you with malicious IP addresses handling.
 #          The IPs should be provided by external programs such as ModSecurity or ModEvasive for Apache2, etc.
-# Home:    https://github.com/metalevel-ad/www-security-assistant
+# Home:    https://github.com/metalevel-tech/www-security-assistant
 # Author:  Spas Z. Spasov <spas.z.spasov@gmail.com> (C) 2018
 #
 # This program is free software; you can redistribute it and/or modify it under the terms of the
