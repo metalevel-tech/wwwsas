@@ -61,7 +61,7 @@ The script have a kind of integration with [`www.abuseipdb.com`](https://www.abu
 
 The script is able to send two kinds of emails depending on your preferences provided within the configuration file. It can send HTML formated emails and plain text emails - variables `$EMAIL_TO` and `$EMAIL_TO_PLAIN`. If none of these variables is set, the script execution will be discontinued (interrupted) before the email section.
 
-Here is ho one HTML formated email looks like:
+Here is how one HTML formated email looks like:
 
 ![Examples email sent by the script.](.images/www-security-assistant-email-demo.png)
 
