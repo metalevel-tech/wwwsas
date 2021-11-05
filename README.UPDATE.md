@@ -39,7 +39,7 @@
     echo "# $(date) -----" >> "$LOG_FILE" 2>&1
     
     # Obtain 'license_key=' at https://www.maxmind.com/en/accounts/<USER ID>/geoip/downloads
-    /usr/bin/curl 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=DDjiOKuTXVBMaGSE&suffix=zip' --output '/etc/modsecurity/geoipupdate/data/GeoLite2-Country-CSV.zip' >> "$LOG_FILE" 2>&1
+    /usr/bin/curl 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=YOUR_LICENSE_KEY&suffix=zip' --output '/etc/modsecurity/geoipupdate/data/GeoLite2-Country-CSV.zip' >> "$LOG_FILE" 2>&1
     /etc/modsecurity/geolite2legacy/geolite2legacy.py -i /etc/modsecurity/geoipupdate/data/GeoLite2-Country-CSV.zip -o /etc/modsecurity/geoipupdate/data/GeoliteCountry.dat >> "$LOG_FILE" 2>&1
 
     echo "# ---" >> "$LOG_FILE" 2>&1
