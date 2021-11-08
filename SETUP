@@ -507,11 +507,11 @@ read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel
 # -------------------------------------------------------
 # [Step 9] Setup ModSecurity; Install ModSecurity CRS 3.x
 # -------------------------------------------------------
-echo -e "${RED}"; echo -e "\n\n*** Install OWASP ModSecurity Core Rule Set 3.x *****" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+echo -e "${RED}"; echo -e "\n\n*** Install ModSecurity Core Rule Set 3.x *****" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
 
 if [[ -z $WORK_DIR_PREVIOUS_INSTALLATION ]]
 then
-	echo -e "\nNOTE: This is a new installation. We will install OWASP ModSecurity CRS 3.x." | tee -a "$LOG_FILE"
+	echo -e "\nNOTE: This is a new installation. We will install ModSecurity CRS 3.x." | tee -a "$LOG_FILE"
 
 	echo -e "The setup script will clone the  branch '${YEL}v3.3/master${NCL}' of ModSecurity Core Rule Set,"
 	echo -e "in the directory '${YEL}${MOD_SECURITY_CRS_DIR}${NCL}'."
