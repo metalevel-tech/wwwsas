@@ -253,7 +253,7 @@ iptables_chain_exists() {
 # Functions section END
 # -----------------------------------------------------------------------
 
-function SKIP() {
+
 # -----------------------------
 # [Step 1] The initial dialogue
 # -----------------------------
@@ -305,7 +305,7 @@ else
 		echo -e "\nBranch: $BRANCH\nInstaller version (new): $INSTALLER_VERSION_NEW\nInstaller version (old): $INSTALLER_VERSION\n" | tee -a "$LOG_FILE"
         echo "The version coincides." | tee -a "$LOG_FILE"
 fi
-}
+
 
 # ---------------------------------------------------
 # [Step 3] Environment (home directory) setup section
