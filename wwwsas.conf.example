@@ -70,20 +70,21 @@ AbuseIPDB_CategoryCountLimit="5"
 # Aggressive Mode for ModSecurity
 # The script "modules/modsecurity-assistant.sh" will export the ModSecurity's disruptive "$RULE_ID" that is cause of the current thread.
 # If that "$RULE_ID" belongs to the following array the "$IP" will be reported to AbuseIPDB, no matter (but regard to) the other logic.
-# - RuleId "150" is wwwsas REQUEST_URI words blacklist;
-# - RuleId "160" is wwwsas Deny requests without a host header;
+# - RuleId "1150" is wwwsas REQUEST_URI words blacklist;
+# - RuleId "1160" is wwwsas Deny requests without a host header;
+# - RuleId "1170" is wwwsas Deny request that don't use GET, HEAD or POST;
 # - RuleId "920350" is owasp Check that the host header is not an IP address.
 # - RuleId "920300" is owasp Generates a notice if the Accept header is missing.
 # - RuleId "949110" is owasp Anomaly Mode rule.
 # - RuleId "959100" is owasp Anomaly Mode rule.
 # Comment out the array to enable this feature.
-#AbuseIPDB_MODSEC_AGGRESSIVE_MODE_RULES=("150" "160" "920350" "920300" "949110" "959100")
+#AbuseIPDB_MODSEC_AGGRESSIVE_MODE_RULES=("1150" "1160" "1170" "920350" "920300" "949110" "959100")
 
 # Aggressive Mode for FloodDetector
 # Comment out the variable to enable this feature.
 #AbuseIPDB_FLOODT_AGGRESSIVE_MODE="YES"
 
-# In order to download and further update the GeoLite2 data base, used by ModSecurity2, 
+# In order to download and further update the GeoLite2 data base, used by ModSecurity2,
 # you need to provide a license key obtained at: https://www.maxmind.com/en/accounts/<USER ID>/geoip/downloads
 MaxMindGeoLite2_LICENSE_KEY=""
 
