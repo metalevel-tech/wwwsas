@@ -507,17 +507,17 @@ read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel
 # -------------------------------------------------------
 # [Step 9] Setup ModSecurity; Install ModSecurity CRS 3.x
 # -------------------------------------------------------
-echo -e "${RED}"; echo -e "\n\n*** Install ModSecurity Core Rule Set 3.x *****" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+echo -e "${RED}"; echo -e "\n\n*** Install ModSecurity Core Rule Set 3.x and GeoLite2Legacy *****" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
 
 if [[ -z $WORK_DIR_PREVIOUS_INSTALLATION ]]
 then
 	echo -e "\nNOTE: This is a new installation. We will install ModSecurity CRS 3.x." | tee -a "$LOG_FILE"
 
+	# Coreruleset (CRS)
 	echo -e "The setup script will clone the  branch '${YEL}v3.3/master${NCL}' of ModSecurity Core Rule Set,"
 	echo -e "in the directory '${YEL}${MOD_SECURITY_CRS_DIR}${NCL}'."
-	echo -e "For more information go to: https://coreruleset.org/installation/"
+	echo -e "For more information go to: https://coreruleset.org/installation/\n"
 
-	# Coreruleset (CRS)
 	if [[ -d $MOD_SECURITY_CRS_DIR ]]
 	then
 		echo -e "\nThe directory '$MOD_SECURITY_CRS_DIR' already exists." | tee -a "$LOG_FILE"
@@ -526,11 +526,15 @@ then
 	else
 		git clone "https://github.com/coreruleset/coreruleset.git" --branch "v3.3/master" "${MOD_SECURITY_CRS_DIR}"
 
-		echo -e "\nModSecurity CRS 3.3/master is cloned." | tee -a "$LOG_FILE"
+		echo -e "\nModSecurity CRS 3.3/master is cloned.\n" | tee -a "$LOG_FILE"
 		echo -e "For more information go to: https://coreruleset.org/installation/" >> "$LOG_FILE"
 	fi
 
 	# GeoLite2Legacy
+	echo -e "The setup script will clone the tool '${YEL}GeoLite2Legacy${NCL}' and initial '${YEL}GeoIP.dat${NCL}' for ModSec,"
+	echo -e "in the directories '${YEL}${GEOLITE2_LEGACY_DIR}${NCL}' and '${YEL}${GEOLITE2_DATA_DIR}${NCL}'."
+	echo -e "For more information go to: https://github.com/sherpya/geolite2legacy/\n"
+
 	if [[ -d $GEOLITE2_LEGACY_DIR ]]
 	then
 		echo -e "\nThe directory '$GEOLITE2_LEGACY_DIR' already exists." | tee -a "$LOG_FILE"
