@@ -1,0 +1,1 @@
+15 * * * * root "/etc/wwwsas/modules/post-analyse.sh" 'AutoMode' >> "/etc/wwwsas/tmp/execution.log" 2>&1

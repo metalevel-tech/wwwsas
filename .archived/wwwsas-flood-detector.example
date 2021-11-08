@@ -1,0 +1,1 @@
+* * * * * root "/etc/wwwsas/modules/flood-detector.sh" 'AutoMode' >> "/etc/wwwsas/tmp/execution.log" 2>&1

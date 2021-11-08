@@ -1,0 +1,99 @@
+# Defeat HTTP fingerprinting;
+# https://www.packtpub.com/books/content/blocking-common-attacks-using-modsecurity-25-part-1 -----------
+#
+# Send full server signature so ModSecurity can alter it
+# https://www.virendrachandak.com/techtalk/how-to-hide-apache-information-with-servertokens-and-serversignature-directives/
+#
+#ServerTokens Prod
+ServerTokens Full
+
+
+# Change server signature (Alter the web server signature sent by Apache)
+#
+SecServerSignature "Apache"
+#SecServerSignature "Microsoft-IIS/5.0"
+#SecServerSignature "Microsoft-IIS/6.0" # Интересно, прави проблем при презареждане (след потвърждаване/запис) на сттраниците с настройки на разширенията за WP.
+
+
+# Directory traversal attacks Example Rule
+# SecRule REQUEST_URI "../" "t:urlDecodeUni, deny, log, id:1109, redirect:/issues.php"
+
+# Uri Access Rule Example
+# SecRule REQUEST_URI "/issues.php" "id:1110,pass,log"
+
+
+# Whitelist some IP adresses
+SecRule REMOTE_ADDR "@ipMatch 127.0.0.1,127.0.0.255" \
+    "id:1000, phase:1, allow, \
+     ctl:auditEngine=Off, \
+     ctl:ruleEngine=Off"
+
+
+# REQUEST_URI words blacklist
+SecRule REQUEST_URI "@pmFromFile /etc/wwwsas/confs/modsec.uri.black-list.conf" \
+	"id:1150, phase:2, log, t:lowercase, drop, deny, status:403, \
+		redirect:'/issues.php', \
+		tag:'www-sas-uri-black-list', \
+		chain"
+		SecRule REMOTE_ADDR "!@ipMatchFromFile /etc/wwwsas/confs/modsec.ip.white-list.conf" \
+			"setenv:REMOTE_HOST=%{REMOTE_HOST}, \
+			 setenv:ARGS=%{ARGS}, \
+			 setenv:RULE_ID=%{RULE.id}, \
+			 setenv:FULL_REQUEST=%{FULL_REQUEST}, \
+			 exec:/etc/wwwsas/modules/modsecurity-assistant.sh"
+
+
+# Deny requests without host header
+SecRule &REQUEST_HEADERS:Host "@eq 0" \
+	"id:1160, phase:2, log, t:lowercase, drop, deny, status:403, \
+		redirect:'/issues.php', \
+		tag:'www-sas-requests-without-host-header', \
+		tag:'www-sas-uri-black-list', \
+		chain"
+		SecRule REMOTE_ADDR "!@ipMatchFromFile /etc/wwwsas/confs/modsec.ip.white-list.conf" \
+			"setenv:REMOTE_HOST=%{REMOTE_HOST}, \
+			 setenv:ARGS=%{ARGS}, \
+			 setenv:RULE_ID=%{RULE.id}, \
+			 setenv:FULL_REQUEST=%{FULL_REQUEST}, \
+			 exec:/etc/wwwsas/modules/modsecurity-assistant.sh"
+
+
+# Deny request that don't use GET, HEAD or POST
+# https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods
+SecRule REQUEST_METHOD "!^(get|head|post)$" \
+	"id:1170, phase:2, log, t:lowercase, drop, deny, status:403, \
+		redirect:'/issues.php', \
+		tag:'www-sas-request-do-not-use-get-head-post', \
+		chain"
+		SecRule REMOTE_ADDR "!@ipMatchFromFile /etc/wwwsas/confs/modsec.ip.white-list.conf" \
+			"setenv:REMOTE_HOST=%{REMOTE_HOST}, \
+			 setenv:ARGS=%{ARGS}, \
+			 setenv:RULE_ID=%{RULE.id}, \
+			 setenv:FULL_REQUEST=%{FULL_REQUEST}, \
+			 exec:/etc/wwwsas/modules/modsecurity-assistant.sh"
+
+# Deprecated, defined via the Apache's directive: Protocols h2 h2c http/1.1
+# See also CRS id:900230
+
+# Disable HTTP 1.0 Protocol - review rule 1180
+# https://stackoverflow.com/questions/26126687/rewriterule-meaning -------------------------
+#
+# <IfModule mod_rewrite.c>
+#	RewriteEngine On
+#	RewriteCond %{THE_REQUEST} !([HTTPhttp]/1\.[12]|[HTTPhttp]/2|[Hh2Cc])$
+#	RewriteRule .* - [F]
+# </IfModule>
+
+# Only allow HTTP version 1.1 1.2 2
+
+# SecRule REQUEST_PROTOCOL "!^(http/1\.[12]|http/2|h2|h2c)$" \
+# 	"id:1180, phase:1, log, t:lowercase, drop, deny, status:403, \
+# 		redirect:'/issues.php', \
+# 		tag:'www-sas-denied-http-protocol', \
+# 		chain"
+# 		SecRule REMOTE_ADDR "!@ipMatchFromFile /etc/wwwsas/confs/modsec.ip.white-list.conf" \
+# 			"setenv:REMOTE_HOST=%{REMOTE_HOST}, \
+# 			 setenv:ARGS=%{ARGS}, \
+# 			 setenv:RULE_ID=%{RULE.id}, \
+# 			 setenv:FULL_REQUEST=%{FULL_REQUEST}, \
+# 			 exec:/etc/wwwsas/modules/modsecurity-assistant.sh"

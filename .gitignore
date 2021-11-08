@@ -12,3 +12,4 @@
 *.mail
 *.mail.plain
 /tmp/*
+/logs/*

@@ -1,0 +1,2 @@
+# This is workaround approach for iptables and ipset configuration restore when ifupdown is not available
+@reboot root sleep 30 && "/etc/wwwsas/ipset-restore.sh" >"/etc/wwwsas/tmp/ipset-restore.cron.log" 2>&1 && "/etc/wwwsas/iptables-restore.sh" >"/etc/wwwsas/tmp/iptables-restore.cron.log" 2>&1
