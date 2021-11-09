@@ -43,6 +43,7 @@ iptables -D IN_public_allow -p tcp -m tcp --dport 21 -m conntrack --ctstate NEW,
 iptables -D IN_public_allow -p tcp -m tcp --dport 53 -m conntrack --ctstate NEW,UNTRACKED -j ACCEPT
 iptables -D IN_public_allow -p udp -m udp --dport 53 -m conntrack --ctstate NEW,UNTRACKED -j ACCEPT
 iptables -D IN_public_allow -p tcp -m tcp --dport 1022 -m conntrack --ctstate NEW,UNTRACKED -j ACCEPT
+iptables -D IN_public_allow -p tcp -m tcp --dport 8022 -m conntrack --ctstate NEW,UNTRACKED -j ACCEPT
 iptables -D IN_public_allow -p tcp -m tcp --dport 10181 -m conntrack --ctstate NEW,UNTRACKED -j ACCEPT
 
 # Add the necessary IN_public_allow rules
