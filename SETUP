@@ -452,10 +452,10 @@ read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel
 # ----------------------------------------
 # [Step 7] Setup Crontab
 # ----------------------------------------
-echo -e "${RED}"; echo -e "\n\n*** Create '/etc/cron.d/wwwsas.contab' *****" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
+echo -e "${RED}"; echo -e "\n\n*** Create '/etc/cron.d/wwwsas-crontab' *****" | tee -a "$LOG_FILE"; echo -ne "${NCL}"
 
-SRCE_FILE="${WORK_DIR}/assets/etc/cron.d/wwwsas.contab.example"
-DEST_FILE="/etc/cron.d/wwwsas.contab"
+SRCE_FILE="${WORK_DIR}/assets/etc/cron.d/wwwsas-crontab.example"
+DEST_FILE="/etc/cron.d/wwwsas-crontab"
 create_local_file
 
 read -rp "$(echo -e "\n${NCL}Press [Enter] to continue, press [Ctrl+C] to cancel... ${NCL}")"

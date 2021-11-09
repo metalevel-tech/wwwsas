@@ -203,7 +203,7 @@ The `SETUP` will interactively guide you through the steps, described below, and
 
 6. She script will **Create few empty \*.log, \*.list and \*.history files**. We need this step because, later, we must grant the necessary write permissions to the Apache's user *www-data*.
 
-7. **Setup [wwwsas.contab](assets/etc/cron.d/wwwsas.contab.example).**
+7. **Setup [wwwsas-crontab](assets/etc/cron.d/wwwsas-crontab.example).**
 
    Please review this file carefully! 
    
@@ -253,7 +253,7 @@ The `SETUP` will interactively guide you through the steps, described below, and
     iptables -I INPUT 2 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT    # Allow 3 way handshake
     ````
 
-14. [**`[DEPRECATED SETUP] CHEK [WWWSAS.CRONTAB]`**](assets/etc/cron.d/wwwsas.contab.example) <s>**Setup Iptables SAVE and RESTORE at REBOOT**. At this step the setup script will create the following symbolic links, thus the process of save and restore of the Iptables configuration at reboot will be automated.
+14. [**`[DEPRECATED SETUP] CHEK [WWWSAS.CRONTAB]`**](assets/etc/cron.d/wwwsas-crontab.example) <s>**Setup Iptables SAVE and RESTORE at REBOOT**. At this step the setup script will create the following symbolic links, thus the process of save and restore of the Iptables configuration at reboot will be automated.
 
     ````bash
     ln -s '/etc/wwwsas/firewall/iptables-save.sh' '/etc/network/if-post-down.d/iptables-save'
@@ -265,7 +265,7 @@ The `SETUP` will interactively guide you through the steps, described below, and
     
     Also the main script `wwwsas.sh` calls `iptables-save.sh` each time when a new rule is issued.
 
-15. [**`[DEPRECATED SETUP] CHEK [WWWSAS.CRONTAB]`**](assets/etc/cron.d/wwwsas.contab.example) <s>**Setup Ipset SAVE and RESTORE at REBOOT**. This step is similar as the above - it will not be processed, if you have run the `SETUP` script with the [`no-ipset`](https://github.com/metalevel-tech/wwwsas#step-2--setup-www-security-assistant) option enabled. Currently the tool `ipset` is used within the script `iptables.basic-setup.local` to be created a [real port scanning protection](https://unix.stackexchange.com/a/407904/201297).</s>
+15. [**`[DEPRECATED SETUP] CHEK [WWWSAS.CRONTAB]`**](assets/etc/cron.d/wwwsas-crontab.example) <s>**Setup Ipset SAVE and RESTORE at REBOOT**. This step is similar as the above - it will not be processed, if you have run the `SETUP` script with the [`no-ipset`](https://github.com/metalevel-tech/wwwsas#step-2--setup-www-security-assistant) option enabled. Currently the tool `ipset` is used within the script `iptables.basic-setup.local` to be created a [real port scanning protection](https://unix.stackexchange.com/a/407904/201297).</s>
 
 ### Step 3 :: Post setup configuration
 
@@ -380,7 +380,7 @@ exit 0
 sudo chmod +x /etc/wwwsas/firewall/iptables-save.sh
 sudo chmod +x /etc/wwwsas/firewall/iptables-restore.sh
 ```
-[**`[DEPRECATED SETUP] CHEK [WWWSAS.CRONTAB]`**](assets/etc/cron.d/wwwsas.contab.example) <s>
+[**`[DEPRECATED SETUP] CHEK [WWWSAS.CRONTAB]`**](assets/etc/cron.d/wwwsas-crontab.example) <s>
 
 ```bash
 sudo ln -s /etc/wwwsas/firewall/iptables-save.sh /etc/network/if-post-down.d/iptables-save
@@ -421,7 +421,7 @@ Note: on some VPSes there is a problem with the scripts placed in `/etc/network/
 
 * The scripts [`iptables-default-save.sh`](firewall/iptables-default-save.sh), [`iptables-default-restore.sh`](firewall/iptables-default-restore.sh), [`ipset-default-save.sh`](firewall/ipset-default-save.sh) and [`ipset-default-restore.sh`](firewall/ipset-default-restore.sh) are also included.
 
-* All of these scripts are triggered by [`wwwsas.crontab`](assets/etc/cron.d/wwwsas.contab.example).
+* All of these scripts are triggered by [`wwwsas.crontab`](assets/etc/cron.d/wwwsas-crontab.example).
 
 * [`iptables-save.sh`](firewall/iptables-save.sh) is used by the main script [`wwwsas.sh`](wwwsas.sh) when an IP address is permanently blocked.
 
