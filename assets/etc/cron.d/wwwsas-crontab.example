@@ -19,13 +19,17 @@ MAILTO=root
 # m h dom mon dow user-name command
 # @reboot         user-name command
 
-# Restore the last state of iptables and ipset (workaround approach when ifup/ifdown are not available)
-@reboot root sleep 30 && "/etc/wwwsas/firewall/ipset-restore.sh" >"/etc/wwwsas/tmp/ipset-restore.cron.log" 2>&1
-@reboot root sleep 35 && "/etc/wwwsas/firewall/iptables-restore.sh" >"/etc/wwwsas/tmp/iptables-restore.cron.log" 2>&1
+# Open the custom SSH port
+# @reboot root sleep 15 && /usr/sbin/iptables -w -A IN_public_allow -p tcp -m tcp --dport 10181 -m conntrack --ctstate NEW,UNTRACKED -j ACCEPT
 
 # Save the default state of iptables and ipset
 @reboot root sleep 20 && "/etc/wwwsas/firewall/ipset-default-save.sh" >"/etc/wwwsas/tmp/ipset-default-save.cron.log" 2>&1
 @reboot root sleep 25 && "/etc/wwwsas/firewall/iptables-default-save.sh" >"/etc/wwwsas/tmp/iptables-default-save.cron.log" 2>&1
+# @reboot root sleep 30 && "/etc/wwwsas/firewall/firewall.superhosting-mod.sh" >"/etc/wwwsas/tmp/firewall.superhosting-mod.cron.log" 2>&1
+
+# Restore the last state of iptables and ipset (workaround approach when ifup/ifdown are not available)
+@reboot root sleep 35 && "/etc/wwwsas/firewall/ipset-restore.sh" >"/etc/wwwsas/tmp/ipset-restore.cron.log" 2>&1
+@reboot root sleep 40 && "/etc/wwwsas/firewall/iptables-restore.sh" >"/etc/wwwsas/tmp/iptables-restore.cron.log" 2>&1
 
 # Auto restore the defaults each 30 minutes during the SETUP preocess > disable these rules when you are ready
 */30 * * * *  root "/etc/wwwsas/firewall/ipset-default-restore.sh" >"/etc/wwwsas/tmp/ipset-default-restore.cron.log" 2>&1
