@@ -1,6 +1,10 @@
 #!/bin/sh
 
-# Name:    firewall/iptables-basic-setup.local[.example] 
+#################################################################################### 
+# This file is outdated. It still here as an example. Use 'firewall.*.sh' instead! #
+####################################################################################
+
+# Name:    firewall/iptables-basic-setup.local{.example}
 # Summary: Firewall setup
 # Home:    https://github.com/metalevel-tech/wwwsas
 # Author:  Spas Z. Spasov <spas.z.spasov@gmail.com> (C) 2021
