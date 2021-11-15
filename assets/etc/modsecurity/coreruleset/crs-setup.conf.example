@@ -769,7 +769,7 @@ SecAction \
   pass,\
   t:none,\
   setvar:'tx.dos_burst_time_slice=60',\
-  setvar:'tx.dos_counter_threshold=100',\
+  setvar:'tx.dos_counter_threshold=200',\
   setvar:'tx.dos_block_timeout=600'"
 
 #

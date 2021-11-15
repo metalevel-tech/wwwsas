@@ -1,0 +1,718 @@
+# ------------------------------------------------------------------------
+# OWASP ModSecurity Core Rule Set ver.3.3.2
+# Copyright (c) 2006-2020 Trustwave and contributors. All rights reserved.
+#
+# The OWASP ModSecurity Core Rule Set is distributed under
+# Apache Software License (ASL) version 2
+# Please see the enclosed LICENSE file for full details.
+# ------------------------------------------------------------------------
+
+#
+# The purpose of this file is to hold LOCAL exceptions for your site.
+# The types of rules that would go into this file are one where you want
+# to unconditionally disable rules or modify their actions during startup.
+#
+# Please see the file REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example
+# for a description of the rule exclusions mechanism and the correct
+# use of this file.
+#
+
+#
+# Example Exclusion Rule: To unconditionally disable a rule ID
+#
+# ModSecurity Rule Exclusion: 942100 SQL Injection Detected via libinjection
+# SecRuleRemoveById 942100
+
+# Example Exclusion Rule: Remove a group of rules
+#
+# ModSecurity Rule Exclusion: Disable PHP injection rules
+# SecRuleRemoveByTag "attack-injection-php"
+
+#
+# Example Exclusion Rule: To unconditionally remove parameter "foo" from
+#                         inspection for SQLi rules
+#
+# ModSecurity Rule Exclusion: disable sqli rules for parameter foo.
+# SecRuleUpdateTargetByTag "attack-sqli" "!ARGS:foo"
+
+
+# -- [[ Changing the Disruptive Action for Anomaly Mode ]] --
+#
+# In Anomaly Mode (default in CRS3), the rules in REQUEST-949-BLOCKING-EVALUATION.conf
+# and RESPONSE-959-BLOCKING-EVALUATION.conf check the accumulated attack scores
+# against your policy. To apply a disruptive action, they overwrite the default
+# actions specified in SecDefaultAction (setup.conf) with a 'deny' action.
+# This 'deny' is by default paired with a 'status:403' action.
+#
+# In order to change the disruptive action from 'deny' to something else,
+# you must use SecRuleUpdateActionByID directives AFTER the CRS rules
+# are configured, for instance in the RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf file.
+#
+# These actions only apply when using Anomaly Mode.
+#
+# Default action: block with error 403
+# (No configuration needed in this file if you want the default behavior.)
+#
+
+# Example: redirect back to the homepage on blocking
+#
+# SecRuleUpdateActionById 949110 "t:none,redirect:'http://%{request_headers.host}/'"
+# SecRuleUpdateActionById 959100 "t:none,redirect:'http://%{request_headers.host}/'"
+
+# Example: redirect to another URL on blocking
+#
+# SecRuleUpdateActionById 949110 "t:none,redirect:'http://example.com/report_problem'"
+# SecRuleUpdateActionById 959100 "t:none,redirect:'http://example.com/report_problem'"
+
+# Example: send an error 404
+#
+# SecRuleUpdateActionById 949110 "t:none,deny,status:404"
+# SecRuleUpdateActionById 959100 "t:none,deny,status:404"
+
+# Example: drop the connection (best for DoS attacks)
+#
+# SecRuleUpdateActionById 949110 "t:none,drop"
+# SecRuleUpdateActionById 959100 "t:none,drop"
+
+
+# ----------------------------------------------------------------
+# Anomaly Mode Update by ID - WWWSAS Rules
+# ----------------------------------------------------------------
+
+SecRuleUpdateActionById 949110 "t:none, drop, deny, status:403, \
+	redirect:'/issues.php', \
+	setenv:REMOTE_HOST=%{REMOTE_HOST}, \
+	setenv:ARGS=%{ARGS}, \
+	setenv:RULE_ID=%{RULE.id}, \
+	setenv:FULL_REQUEST=%{FULL_REQUEST}, \
+	exec:/etc/wwwsas/modules/modsecurity-assistant.sh"
+
+SecRuleUpdateActionById 959100 "t:none, drop, deny, status:403, \
+	redirect:'/issues.php', \
+	setenv:REMOTE_HOST=%{REMOTE_HOST}, \
+	setenv:ARGS=%{ARGS},\
+	setenv:RULE_ID=%{RULE.id}, \
+	setenv:FULL_REQUEST=%{FULL_REQUEST}, \
+	exec:/etc/wwwsas/modules/modsecurity-assistant.sh"
+
+# -- Check that the host header is not an IP address ------------- 
+
+SecRuleUpdateActionById 920350 "t:none, drop, deny, status:403, \
+        redirect:'/issues.php', \
+        setenv:REMOTE_HOST=%{REMOTE_HOST}, \
+        setenv:ARGS=%{ARGS}, \
+        setenv:RULE_ID=%{RULE.id}, \
+        setenv:FULL_REQUEST=%{FULL_REQUEST}, \
+        exec:/etc/wwwsas/modules/modsecurity-assistant.sh"
+
+# -- This rule generates a notice if the Accept header is missing. ---
+
+SecRuleUpdateActionById 920300 "t:none, drop, deny, status:403, \
+        redirect:'/issues.php', \
+        setenv:REMOTE_HOST=%{REMOTE_HOST}, \
+        setenv:ARGS=%{ARGS}, \
+        setenv:RULE_ID=%{RULE.id}, \
+        setenv:FULL_REQUEST=%{FULL_REQUEST}, \
+        exec:/etc/wwwsas/modules/modsecurity-assistant.sh"
+
+
+# ---------------------------------
+# Rules Files and Examples - WWWSAS
+# ---------------------------------
+
+# sudo nano rules/REQUEST-949-BLOCKING-EVALUATION.conf
+# sudo nano rules/RESPONSE-959-BLOCKING-EVALUATION.conf
+
+# Example: redirect to url/uri -----
+#
+#SecRuleUpdateActionById 949110 "t:none,deny,status:403,redirect:'/issues.php'"
+#SecRuleUpdateActionById 959100 "t:none,deny,status:403,redirect:'/issues.php'"
+
+# Example of a complex rule -----
+#
+#SecRule REQUEST_URI "^/wp-admin/admin-ajax.php*|^/index.php\?title=.*&action=(edit|submit|raw&ctype=text/javascript|raw&ctype=text/css)$|^/wp-admin/plugin-install.php\?tab=plugin-information&plugin=.*$" \
+#	"id:'999999', t:none, phase:1, pass, \
+#	 ctl:ruleRemoveById=953100, \
+#	 ctl:ruleRemoveById=959100, \
+#	 ctl:ruleRemoveById=980140"
+
+
+# I'm not sure does this rule work!? Maybe it should be in REQUEST-900 -----
+#
+SecRule REMOTE_ADDR "@ipMatchFromFile /etc/wwwsas/confs/modsec.ip.white-list.conf" \
+	"id:'999', t:none, phase:1, pass, \
+	 ctl:ruleRemoveById=949110, \
+	 ctl:ruleRemoveById=959100"
+
+
+# -----------------------------------
+# PhpMyAdmin 
+# -----------------------------------
+
+# Whitelist Rule 999005 Info -----
+#
+# Whitelist the uri blacklist rule id:150
+#
+# Remote IP: 192.168.100.100
+# Host:      example.com
+# Request:   GET /my-unique-php-admin-uri/phpmyadmin.css.php?nocache=5961667935ltr HTTP/1.1
+#
+SecRule REQUEST_URI "^/DBAdm/phpmyadmin.css.php\?nocache=.*$" \
+	"id:'999005', t:none, phase:1, pass, \
+	 ctl:ruleRemoveById=1150"
+	 
+	 
+# -----------------------------------
+# MediaWiki
+# -----------------------------------
+
+# Whitelist Rule 999010 Info :: by a Cookie's data -----
+#
+# Whitelist MediaWiki VisualEditor for the admin users with 3 rules chain
+# add "ctl:auditEngine=Off" to the last rule to remove the logging
+# also you can change "ctl:ruleEngine=DetectionOnly" with "ctl:ruleEngine=Off"
+#
+#SecRule REQUEST_URI "^/api.php" \
+#   "id:'999010', phase:1, t:none, log, chain"
+#    SecRule REQUEST_COOKIES:/^theWIKIUserName/ "theUserName" "t:none, log, chain"
+#        SecRule REQUEST_COOKIES:/^theWIKIUserID/ "1" "t:none, log, ctl:ruleEngine=Off"
+
+
+# Whitelist Rule 999009 Info -----
+#
+# Remote IP: 212.43.48.5
+# Host:      vectoria.altclavis.com
+# Request:   GET /wl.api.php?action=categorytree&format=json&category=.*={"mode":20,"hideprefix":10,"showcount":false,"namespaces":false,"notranslatio># Origin:
+# Referer:   https://vectoria.altclavis.com/wiki/Home
+#
+SecRule REQUEST_URI "^/(wl.api|api).php\?action=categorytree&format=.*&category=.*&options=.*&uselang=.*&formatversion=[0-9]+$" \
+        "id:'999009', t:none, phase:1, pass, nolog, \
+         ctl:ruleRemoveById=941310, \
+         ctl:ruleRemoveById=949110, \
+         ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999010 Info -----
+#
+SecRule REQUEST_URI "^/index.php\?search=.*title=.*$" \
+	"id:'999010', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=932150"
+
+
+# Whitelist Rule 999011 Info -----
+#
+SecRule REQUEST_URI "^/index.php/.*\?veaction=edit&.*$" \
+	"id:'999011', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=949110, \
+	 ctl:ruleRemoveById=959100, \
+	 ctl:ruleRemoveById=980130, \
+	 ctl:ruleRemoveById=932105, \
+	 ctl:ruleRemoveById=932150, \
+	 ctl:ruleRemoveById=932105"
+
+
+# Whitelist Rule 999012 Info ----- ??? ---
+#
+# Remote IP: 87.227.173.192
+# Host:      bg.trivictoria.org
+# Request:   POST /index.php?title=Шаблон:Pointer&action=submit HTTP/1.1
+# Origin:    https://bg.trivictoria.org
+# Referer:   https://bg.trivictoria.org/index.php?title=Шаблон:Pointer&action=edit
+#
+SecRule REQUEST_URI "^/index.php\?title=.*&action=(submit|edit)$" \
+	"id:'999012', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=932105, \
+	 ctl:ruleRemoveById=932150, \
+	 ctl:ruleRemoveById=941100, \
+	 ctl:ruleRemoveById=941160, \
+	 ctl:ruleRemoveById=941350, \
+	 ctl:ruleRemoveById=949110, \
+	 ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999013 Info ----- ??? ---
+#
+# Remote IP: 87.227.173.192
+# Host:      wiki.szs.space
+# Request:   GET /index.php?title=.*_PhpMyAdmin/phpmyadmin-apache.conf&action=edit&redlink=1 HTTP/1.1
+# Origin:    
+# Referer:   https://wiki.szs.space/index.php/%D0%98%D0%BD%D1%81%D1%82%D0%B0%D0%BB%D0%B8%D1%80%D0%B0%D0%BD%D0%B5_%D0%BD%D0%B0_PhpMyAdmin
+#
+SecRule REQUEST_URI "^/index.php\?title=.*_PhpMyAdmin.*&action=edit&redlink=[0-9]+$" \
+	"id:'999013', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=150"
+
+
+# Whitelist Rule 999014 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      wiki.szs.space
+# Request:   GET /opensearch_desc.php HTTP/1.1
+# Origin:    
+# Referer:   
+#
+SecRule REQUEST_URI "^/opensearch_desc.php$" \
+	"id:'999014', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=920300"
+
+
+# Whitelist Rule 999015 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      wiki.szs.space
+# Request:   POST /wiki/Ubuntu_18.04_VPS_on_Digital_Ocean?action=submit&veswitched=1 HTTP/1.1
+# Origin:    https://wiki.szs.space
+# Referer:   https://wiki.szs.space/wiki/Ubuntu_18.04_VPS_on_Digital_Ocean?veaction=edit&section=1
+#
+SecRule REQUEST_URI "^/wiki/.*\?action=submit&veswitched=[0-9]+$" \
+	"id:'999015', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=930120, \
+	 ctl:ruleRemoveById=932100, \
+	 ctl:ruleRemoveById=932105, \
+	 ctl:ruleRemoveById=932110, \
+	 ctl:ruleRemoveById=932115, \
+	 ctl:ruleRemoveById=932150, \
+	 ctl:ruleRemoveById=932160, \
+	 ctl:ruleRemoveById=933180, \
+	 ctl:ruleRemoveById=941160, \
+	 ctl:ruleRemoveById=941200, \
+	 ctl:ruleRemoveById=941310, \
+	 ctl:ruleRemoveById=941350, \
+	 ctl:ruleRemoveById=942240, \
+	 ctl:ruleRemoveById=949110, \
+	 ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999016 Info -----
+#
+# Remote IP: 46.237.65.246 | 188.254.142.116 :: Pazardjik
+# Host:      wiki.szs.space
+# Request:   GET / HTTP/1.1
+# Origin:    
+# Referer:   
+#
+#SecRule REQUEST_URI "^(/|/wiki/.*)$" \
+SecRule REQUEST_URI "^/wiki/.*$|^$|^/$" \
+	"id:'999016', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=912120"
+
+
+# Whitelist Rule 999017 Info -----
+#
+# Remote IP: 213.169.42.249
+# Host:      wiki.szs.space
+# Request:   GET /resources/assets/poweredby_mediawiki_88x31.png HTTP/1.1
+# Origin:
+# Referer:   https://wiki.szs.space/wiki/Начална_страница
+#
+SecRule REQUEST_URI "^/resources.*$" \
+        "id:'999017', t:none, phase:1, pass, nolog, \
+         ctl:ruleRemoveById=912170"
+
+
+# Whitelist Rule 999018 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      wiki.szs.space
+# Request:   GET /extensions/TreeAndMenu/fancytree/icons.gif HTTP/1.1
+# Origin:    
+# Referer:   https://wiki.szs.space/wiki/%D0%9D%D0%B0%D1%87%D0%B0%D0%BB%D0%BD%D0%B0_%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0
+#
+SecRule REQUEST_URI "^/extensions/TreeAndMenu/fancytree/.*$" \
+	"id:'999018', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=912170"
+
+
+# Whitelist Rule 999019 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      wiki.szs.space
+# Request:   GET /index.php?title=Специални:Регистриране_или_влизане&returnto=Категория:Помощ HTTP/1.1
+# Origin:    
+# Referer:   https://wiki.szs.space/wiki/Категория:Помощ
+#
+SecRule REQUEST_URI "^/index.php\?title=.*($|&action=submit$|&returnto=.*$|&action=edit$)" \
+	"id:'999019', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=200004, \
+	 ctl:ruleRemoveById=941310, \
+	 ctl:ruleRemoveById=949110, \
+	 ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999020 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      bg.trivictoria.org
+# Request:   GET /index.php?search=.*&title=Специални:Търсене HTTP/1.1
+# Origin:    
+# Referer:   https://bg.trivictoria.org/wiki/Моделиране_на_Длъжност
+#
+SecRule REQUEST_URI "^/index.php\?search=.*&title=.*$" \
+	"id:'999020', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=200004, \
+	 ctl:ruleRemoveById=941310, \
+	 ctl:ruleRemoveById=949110, \
+	 ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999021 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      bg.trivictoria.org
+# Request:   OST /index.php?title=МедияУики:Gadget-Relevant-Articles-core.js&action=submit HTTP/1.1
+# Origin:    https://bg.trivictoria.org
+# Referer:   https://bg.trivictoria.org/index.php?title=МедияУики:Gadget-Relevant-Articles-core.js&action=edit
+#
+SecRule REQUEST_URI "^/index.php\?title=.*:Gadget-Relevant-Articles-core.js&action=submit$" \
+	"id:'999021', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=932100, \
+	 ctl:ruleRemoveById=932130, \
+	 ctl:ruleRemoveById=932140, \
+	 ctl:ruleRemoveById=933210, \
+	 ctl:ruleRemoveById=941180, \
+	 ctl:ruleRemoveById=942170"
+
+
+# Whitelist Rule 999022 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      bg.trivictoria.org
+# Request:   GET /wiki/Специални:Свързани_промени
+#			?hidebots=1&translations=filter&target=Категория:Регистър_на_разработките
+#			&limit=50&days=7&enhanced=1&urlversion=2&peek=1&from=20200522103908
+#			&isAnon=false&action=render&showlinkedto=0&_=1590143950275 HTTP/1.1
+# Origin:
+# Referer:   https://bg.trivictoria.org/wiki/Специални:Свързани_промени
+#			?hidebots=1&translations=filter&target=Категория:Регистър_на_разработките&limit=50&days=7&enhanced=1&urlversion=2
+#
+SecRule REQUEST_URI "^/wiki/.*\?hidebots=[0-9]+&translations=.*&target=.*&limit=.*&days=[0-9]+&enhanced=[0-9]+&urlversion=[0-9]+&peek=[0-9]+&from=[0-9]+&isAnon=.*&action=render&showlinkedto=[0-9]+&_=[0-9]+$" \
+        "id:'999022', t:none, phase:1, pass, nolog, \
+         ctl:ruleRemoveById=920420, \
+         ctl:ruleRemoveById=949110, \
+         ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999023 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      bg.trivictoria.org
+# Request:   POST /wiki/Специални:Качване HTTP/1.1
+# Origin:    https://bg.trivictoria.org
+# Referer:   https://bg.trivictoria.org/index.php?title=Специални:Качване&wpDestFile=Меню_ОТС_2.png&wpForReUpload=1
+#
+SecRule REQUEST_URI "^/wiki/%D0%A1%D0%BF%D0%B5%D1%86%D0%B8%D0%B0%D0%BB%D0%BD%D0%B8:%D0%9A%D0%B0%D1%87%D0%B2%D0%B0%D0%BD%D0%B5$" \
+        "id:'999023', t:none, phase:1, pass, nolog, \
+         ctl:ruleRemoveById=200004"
+
+
+# Whitelist Rule 999024 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      bg.trivictoria.org
+# Request:    POST /wiki/Специални:Писмо_на_потребител HTTP/1.1
+# Origin:    https://bg.trivictoria.org
+# Referer:   https://bg.trivictoria.org/wiki/Специални:Писмо_на_потребител
+#
+SecRule REQUEST_URI "^/wiki/%D0%A1%D0%BF%D0%B5%D1%86%D0%B8%D0%B0%D0%BB%D0%BD%D0%B8:%D0%9F%D0%B8%D1%81%D0%BC%D0%BE_%D0%BD%D0%B0_%D0%BF%D0%BE%D1%82%D1%80%D0%B5%D0%B1%D0%B8%D1%82%D0%B5%D0%BB$" \
+        "id:'999024', t:none, phase:1, pass, nolog, \
+         ctl:ruleRemoveById=941310, \
+         ctl:ruleRemoveById=949110, \
+         ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999050 Info -----
+#
+SecRule REQUEST_URI "^/(api.php|wl.api.php)\?action=visualeditor&format=json&paction=parsefragment&page=.*$" \
+	"id:'999050', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=949110, \
+	 ctl:ruleRemoveById=959100, \
+	 ctl:ruleRemoveById=980130, \
+	 ctl:ruleRemoveById=932105, \
+	 ctl:ruleRemoveById=932150, \
+	 ctl:ruleRemoveById=932105"
+
+
+# Whitelist Rule 999051 Info -----
+#
+# Remote IP: 46.237.65.246
+# Host:      wiki.szs.space
+# Request:   GET /api.php?action=query&format=json&prop=info%7Cpageprops%7Cpageimages%7Cdescription&pithumbsize=80&pilimit=8&ppprop=disambiguation%7Chiddencat&titles=.*&continue= HTTP/1.1
+# Origin:
+# Referer:   https://wiki.szs.space/index.php?title=Ubuntu_18.04_VPS_on_Digital_Ocean&veaction=edit&section=0&summary=%2F%2A+top+%2A%2F+
+#
+SecRule REQUEST_URI "^/(api.php|wl.api.php)\?action=query&format=json&prop=.*$" \
+        "id:'999051', t:none, phase:1, pass, nolog, \
+         ctl:ruleRemoveById=932110, \
+         ctl:ruleRemoveById=941310, \
+         ctl:ruleRemoveById=949110, \
+         ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999052 Info ----- ??? ---
+#
+# Remote IP: 87.227.173.192
+# Host:      wiki.szs.space
+# Request:   POST /api.php HTTP/1.1
+# Origin:    https://wiki.szs.space
+# Referer:   https://wiki.szs.space/wiki/WordPress_ITFES_TECH/ORG?veaction=edit&section=7
+#
+SecRule REQUEST_URI "^/(api.php|wl.api.php)$" \
+	"id:'999052', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=941310, \
+	 ctl:ruleRemoveById=949110, \
+	 ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999053 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      wiki.szs.space
+# Request:   GET /api.php?action=categorytree&format=json&category=%D0%9F%D0%BE%D0%BC%D0%BE%D1%89&options=%7B%22mode%22%3A20%2C%22hideprefix%22%3A10%2C%22showcount%22%3Afalse%2C%22namespaces%22%3Afalse%7D&uselang=bg&formatversion=2&_=1574840284944 HTTP/1.1
+# Origin:    
+# Referer:   https://wiki.szs.space/wiki/%D0%9D%D0%B0%D1%87%D0%B0%D0%BB%D0%BD%D0%B0_%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0
+#
+SecRule REQUEST_URI "^/(api.php|wl.api.php)\?action=categorytree&format=json&category=.*&options=.*&uselang=.*&formatversion=.*$" \
+        "id:'999053', t:none, phase:1, pass, nolog, \
+         ctl:ruleRemoveById=200005, \
+         ctl:ruleRemoveById=941310, \
+         ctl:ruleRemoveById=949110, \
+         ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999054 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      wiki.szs.space
+# Request:   GET /wl.api.php?imgIWL=/images/thumb/a/a9/Установяване_на_конфигурацията_на_системата_3.png/120px-Установяване_на_конфигурацията_на_системата_3.png HTTP/1.1
+# Origin:    
+# Referer:   https://wiki.szs.space/wiki/Поддръжка_на_ТривикториЯ.org
+#
+SecRule REQUEST_URI "^/wl.api.php\?imgIWL=/images/.*$" \
+	"id:'999054', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=941310, \
+	 ctl:ruleRemoveById=949110, \
+	 ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999055 Info -----
+#
+# Remote IP: 85.196.191.88
+# Host:      bg.trivictoria.org
+# Request:   GET /wl.api.php?action=query&list=categorymembers
+#                                        &cmtitle=Категория:Конфигуриране_на_Система_за_осъществяване_на_Субектността
+#                                        &cmprop=title&format=json&cmtype=page&cmlimit=50 HTTP/1.1
+# Origin:    
+# Referer:   https://bg.trivictoria.org/wiki/Система_за_осъществяване_на_субектността_на_индустриалното_предприятие
+#
+SecRule REQUEST_URI "^/(api.php|wl.api.php)\?action=query&list=categorymembers.*$" \
+	"id:'999055', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=941310, \
+	 ctl:ruleRemoveById=949110, \
+	 ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999056 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      bg.trivictoria.org
+# Request:   GET /api.php?action=opensearch&format=json&formatversion=2&search=мо&namespace=0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|20|21|250|251|252|253|274|275|460|461|828|829|1198|1199|2300|2301|2302|2303&limit=10&suggest=true&_=1588575166515 HTTP/1.1
+# Origin:    
+# Referer:   ttps://bg.trivictoria.org/wiki/Обект
+#
+SecRule REQUEST_URI "^/(api.php|wl.api.php)\?action=opensearch&format=json&.*$" \
+	"id:'999056', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=941310, \
+	 ctl:ruleRemoveById=949110, \
+	 ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999057 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      bg.trivictoria.org
+# Request:   GET /api.php?action=visualeditor&format=json&paction=parse&page=.*&uselang=bg&formatversion=2&_=1588760893237 HTTP/1.1
+# Origin:    
+# Referer:   https://bg.trivictoria.org/wiki/.*?veaction=edit
+#
+SecRule REQUEST_URI "^/(api.php|wl.api.php)\?action=visualeditor&format=json&paction=parse&page=.*&uselang=.*&formatversion=.*&_=.*$" \
+	"id:'999057', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=941310, \
+	 ctl:ruleRemoveById=949110, \
+	 ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999058 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      bg.trivictoria.org
+# Request:   GET /api.php?action=query&prop=revisions&format=json&rvprop=ids|timestamp|user|comment|parsedcomment|size|flags|tags&titles=.*&formatversion=2&continue=&rvlimit=67&rvdir=older&rvstartid=19444&_=1588761549836 
+# Origin:    
+# Referer:   https://bg.trivictoria.org/index.php?title=.*&diff=19444&oldid=19443&diffmode=source
+#
+SecRule REQUEST_URI "^/(api.php|wl.api.php)\?action=query&prop=revisions&format=json&rvprop=.*&titles=.*$" \
+	"id:'999058', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=941310, \
+	 ctl:ruleRemoveById=949110, \
+	 ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999059 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      bg.trivictoria.org
+# Request:   GET /api.php?action=templatedata&format=json&formatversion=2
+#                         &titles=Шаблон:S|Шаблон:Sform|Шаблон:Span|Шаблон:Sform/Демонстрация на...
+#                                         |Шаблон:Self|Шаблон:Sp|Шаблон:Sb|Шаблон:Sform/v1
+#                                         |Шаблон:Subpage
+#                         &doNotIgnoreMissingTitles=1&lang=bg&_=1589264811842 HTTP/1.1
+# Origin:    
+# Referer:   https://bg.trivictoria.org/wiki/Моделиране_на_Длъжност?veaction=edit
+#
+#
+SecRule REQUEST_URI "^/api.php\?action=templatedata&format=json&formatversion=[0-9]+&titles=.*$" \
+	"id:'999059', t:none, phase:1, pass, nolog, \
+	 ctl:ruleRemoveById=941310, \
+	 ctl:ruleRemoveById=949110, \
+	 ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999060 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      bg.trivictoria.org
+# Request:   GET /api.php?action=query&format=json&titles=Шаблон:Sform/Демонстрация_на_.*/doc&redirects=0&prop=revisions&rvprop=content&indexpageids=1 HTTP/1.1
+# Origin:
+# Referer:   https://bg.trivictoria.org/index.php?title=Шаблон:Sform/Демонстрация_на_инструментите_за_обработване_на_екранни_форми&action=edit
+#
+SecRule REQUEST_URI "^/(api.php|wl.api.php)\?action=query&format=json&titles=.*&redirects=[0-9]+&prop=.*&rvprop=.*&indexpageids=[0-9]+$" \
+        "id:'999060', t:none, phase:1, pass, nolog, \
+         ctl:ruleRemoveById=941310, \
+         ctl:ruleRemoveById=949110, \
+         ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999061 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      bg.trivictoria.org
+# Request:   POST /api.php HTTP/1.1
+# Origin:    https://bg.trivictoria.org
+# Referer:   https://bg.trivictoria.org/wiki/Специални:UploadWizard
+#
+SecRule REQUEST_URI "^/api.php$" \
+        "id:'999061', t:none, phase:1, pass, nolog, \
+         ctl:ruleRemoveById=200004"
+
+
+# Whitelist Rule 999062 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      bg.trivictoria.org
+# Request:   GET /api.php?action=query&format=json&formatversion=2&prop=info%7Cpageprops%7Cpageimages&generator=prefixsearch
+#			&gpssearch=.*&gpslimit=10&ppprop=disambiguation&redirects=true&pithumbsize=80&pilimit=10&_=1590160061001 HTTP/1.1
+# Origin:
+# Referer:   https://bg.trivictoria.org/wiki/.*?veaction=edit
+#
+SecRule REQUEST_URI "^/api.php\?action=query&format=json&formatversion=[0-9]+&prop=.*&gpssearch=.*&gpslimit=[0-9]+&ppprop=.*&redirects=.*&pithumbsize=[0-9]+&pilimit=[0-9]+&_=[0-9]+$" \
+        "id:'999062', t:none, phase:1, pass, nolog, \
+         ctl:ruleRemoveById=941310, \
+         ctl:ruleRemoveById=949110, \
+         ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999063 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      bg.trivictoria.org
+# Request:   GET /api.php?action=query&format=json&formatversion=2&titles=.*&_=1590172263665 HTTP/1.1
+# Origin:
+# Referer:   https://bg.trivictoria.org/wiki/.*?veaction=edit
+#
+SecRule REQUEST_URI "^/api.php\?action=query&format=json&formatversion=[0-9]+&titles=.*&_=[0-9]+$" \
+        "id:'999063', t:none, phase:1, pass, nolog, \
+         ctl:ruleRemoveById=941310, \
+         ctl:ruleRemoveById=949110, \
+         ctl:ruleRemoveById=980130"
+
+
+# Whitelist Rule 999064 Info -----
+#
+# Remote IP: 87.227.173.192
+# Host:      bg.trivictoria.org
+# Request:   GET /api.php?action=query&format=json&formatversion=2&prop=pageprops&titles=.*&ppprop=disambiguation&errorformat=html&errorlang=bg HTTP/1.1
+# Origin:
+# Referer:   https://bg.trivictoria.org/index.php?title=.*&action=edit&section=2
+#
+SecRule REQUEST_URI "^/api.php\?action=query&format=json&formatversion=[0-9]+&prop=pageprops&titles=.*&ppprop=disambiguation&errorformat=.*&errorlang=.*$" \
+        "id:'999064', t:none, phase:1, pass, nolog, \
+         ctl:ruleRemoveById=941310, \
+         ctl:ruleRemoveById=949110, \
+         ctl:ruleRemoveById=980130"
+
+# Whitelist Rule 999065 Info -----
+#
+# Remote IP: 149.62.203.173
+# Host:      wiki.szs.space
+# Request:   POST /wiki/Специални:ReplaceText HTTP/1.1
+# Origin:    https://wiki.szs.space
+# Referer:   https://wiki.szs.space/wiki/Специални:ReplaceText
+#
+SecRule REQUEST_URI "^/wiki/Специални:ReplaceText$" \
+        "id:'999065', t:none, phase:1, pass, nolog, \
+         ctl:ruleRemoveById=941310, \
+         ctl:ruleRemoveById=949110, \
+         ctl:ruleRemoveById=980130"
+
+# Whitelist Rule 999102 Info -----
+#
+# Remote IP: 172.16.1.110
+# Host:      wiki.szs.space
+# Request:   GET /api.php?action=query&format=json&formatversion=2&titles=Файл:Витоша_17.01.2021_01.png&prop=imageinfo&iiprop=url&iiurlwidth=799 HTTP/2.0
+# Origin:
+# Referer:   https://wiki.szs.space/wiki/Тренировки_2021
+#
+#SecRule REQUEST_URI "^/(wl.api|api).php\?action=query&format=.*&formatversion=[0-9]+&titles=.*&prop=.*$" \
+#        "id:'999102', t:none, phase:1, pass, nolog, \
+#         ctl:ruleRemoveById=999000"
+
+
+# -----------------------------------
+# WordPress
+# -----------------------------------
+
+# Whitelist Rule 999100 Info -----
+#
+# Remote IP: 192.168.100.100
+# Host:      example.com
+# Request:   GET /wp-admin/themes.php HTTP/1.1
+# Referer:   https://example.com/wp-admin/themes.php
+#
+#SecRule REQUEST_URI "^/wp-admin/themes.php$" \
+#	"id:'999100', t:none, phase:1, pass"
+
+
+# Whitelist Rule 999101 Info -----
+#
+# Remote IP: 192.168.100.100
+# Host:      example.com
+# Request:   POST /wp-admin/admin-ajax.php?_fs_blog_admin=true HTTP/1.1
+# Origin:    https://example.com
+# Referer:   https://example.com/wp-admin/theme-editor.php
+#
+#SecRule REQUEST_URI "^/wp-admin/admin-ajax.php\?_fs_blog_admin=true$" \
+#	"id:'999101', t:none, phase:1, pass, \
+#	 ctl:ruleRemoveById=921160, \
+#	 ctl:ruleRemoveById=932105, \
+#	 ctl:ruleRemoveById=932110, \
+#	 ctl:ruleRemoveById=932115, \
+#	 ctl:ruleRemoveById=941130, \
+#	 ctl:ruleRemoveById=941140, \
+#	 ctl:ruleRemoveById=941160, \
+#	 ctl:ruleRemoveById=941170, \
+#	 ctl:ruleRemoveById=941200, \
+#	 ctl:ruleRemoveById=941310, \
+#	 ctl:ruleRemoveById=941350, \
+#	 ctl:ruleRemoveById=942190, \
+#	 ctl:ruleRemoveById=942240, \
+#	 ctl:ruleRemoveById=949110, \
+#	 ctl:ruleRemoveById=980130"

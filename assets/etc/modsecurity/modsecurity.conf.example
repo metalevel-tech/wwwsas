@@ -36,13 +36,13 @@ SecRule REQUEST_HEADERS:Content-Type "application/json" \
 # low as practical.
 #
 SecRequestBodyLimit 13107200
-SecRequestBodyNoFilesLimit 131072
+SecRequestBodyNoFilesLimit 1310720
 
 # Store up to 128 KB of request body data in memory. When the multipart
 # parser reaches this limit, it will start using your hard disk for
 # storage. That is slow, but unavoidable.
 #
-SecRequestBodyInMemoryLimit 131072
+SecRequestBodyInMemoryLimit 1310720
 
 # What do do if the request body size is above our configured limit.
 # Keep in mind that this setting will automatically be set to ProcessPartial
@@ -123,7 +123,7 @@ SecResponseBodyAccess On
 SecResponseBodyMimeType text/plain text/html text/xml
 
 # Buffer response bodies of up to 512 KB in length.
-SecResponseBodyLimit 524288
+SecResponseBodyLimit 5242880
 
 # What happens when we encounter a response body larger than the configured
 # limit? By default, we process what we have and let the rest through.
