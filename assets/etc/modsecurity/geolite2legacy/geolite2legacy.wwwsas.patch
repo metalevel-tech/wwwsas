@@ -1,5 +1,5 @@
 diff --git a/geolite2legacy.py b/geolite2legacy.py
-index e6a39f1..73c3780 100755
+index e6a39f1..c48ca39 100755
 --- a/geolite2legacy.py
 +++ b/geolite2legacy.py
 @@ -225,7 +225,7 @@ class ASNRadixTree(RadixTree):
@@ -20,12 +20,3 @@ index e6a39f1..73c3780 100755
              country_iso_code = location['country_iso_code'] or location['continent_code']
              fips_code = geoname2fips.get(location['geoname_id'])
              if fips_code is None:
-@@ -316,7 +316,7 @@ class CountryRadixTree(RadixTree):
-             if location is None:
-                 continue
- 
--            nets = [IPNetwork(row['network'])]
-+            nets = [IPNetwork(row['network'].decode('utf-8'))]
-             country_iso_code = location['country_iso_code'] or location['continent_code']
-             yield nets, (country_iso_code,)
- 
