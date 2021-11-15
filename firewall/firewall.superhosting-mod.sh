@@ -1,6 +1,6 @@
-#!/bin/sh -e
+#!/bin/sh
 
-# Name:    firewall/iptables-superhosting-mod.sh 
+# Name:    firewall/iptables-superhosting-mod.sh
 # Summary: Add and remove some rules from-to the default iptables settings, provided by SuperHosting.bg to Ubuntu VPS.
 # Home:    https://github.com/metalevel-tech/wwwsas
 # Author:  Spas Z. Spasov <spas.z.spasov@gmail.com> (C) 2021
@@ -21,13 +21,23 @@ iptables -w -N WWWSAS
 iptables -w -I INPUT 3 -j WWWSAS_BEFORE
 iptables -w -I INPUT 4 -j WWWSAS
 
-# SSH Backdor - replace 127.127.127.1 with some trustes IP
-iptables -w -A WWWSAS_BEFORE -m state --state NEW,ESTABLISHED,RELATED --source 127.127.127.1 -p tcp --dport 22 -j ACCEPT
-iptables -w -A WWWSAS_BEFORE -m state --state NEW,ESTABLISHED,RELATED --source 127.127.127.1 -p tcp --dport 10181 -j ACCEPT
+# SSH Backdor - replace 127.127.127.127 with some trustes IP
+iptables -w -A WWWSAS_BEFORE -m state --state NEW,ESTABLISHED,RELATED --source 127.127.127.127 -p tcp --dport 22 -j ACCEPT
+iptables -w -A WWWSAS_BEFORE -m state --state NEW,ESTABLISHED,RELATED --source 127.127.127.127 -p tcp --dport 10181 -j ACCEPT
 
 # SSH brute-force protection
 iptables -w -A WWWSAS_BEFORE -p tcp --dport 10181 -m conntrack --ctstate NEW -m recent --set
 iptables -w -A WWWSAS_BEFORE -p tcp --dport 10181 -m conntrack --ctstate NEW -m recent --update --seconds 60 --hitcount 10 -j DROP
+
+# Real protection against Port Scanning via ipset and iptables
+iptables -w -A WWWSAS_BEFORE -m state --state INVALID -j DROP
+iptables -w -A WWWSAS_BEFORE -m state --state NEW -m set ! --match-set WWWSAS_SCANNED_PORTS src,dst -m hashlimit --hashlimit-above 1/hour --hashlimit-burst 5 --hashlimit-mode srcip --hashlimit-name portscan --hashlimit-htable-expire 10000 -j SET --add-set WWWSAS_PORT_SCANNERS src --exist
+iptables -w -A WWWSAS_BEFORE -m state --state NEW -m set --match-set WWWSAS_PORT_SCANNERS src -j DROP
+iptables -w -A WWWSAS_BEFORE -m state --state NEW -j SET --add-set WWWSAS_SCANNED_PORTS src,dst
+
+# Create ipsets relevant to the above rules
+ipset create WWWSAS_PORT_SCANNERS hash:ip family inet hashsize 32768 maxelem 65536 timeout 600
+ipset create WWWSAS_SCANNED_PORTS hash:ip,port family inet hashsize 32768 maxelem 65536 timeout 60
 
 # Remove default IN_public_allow rules
 iptables -D IN_public_allow -p tcp -m tcp --dport 22 -m conntrack --ctstate NEW,UNTRACKED -j ACCEPT
@@ -75,7 +85,7 @@ iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL FIN,PSH,URG -j DROP
 iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL SYN,FIN,PSH,URG -j DROP
 iptables -t mangle -A PREROUTING -p tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG -j DROP
 
-# ? Block spoofed packets ---
+# ? Block spoofed packets: be careful with these rules, remove networks that you use
 iptables -t mangle -A PREROUTING -s 224.0.0.0/3 -j DROP
 iptables -t mangle -A PREROUTING -s 169.254.0.0/16 -j DROP
 iptables -t mangle -A PREROUTING -s 172.16.0.0/12 -j DROP
@@ -91,7 +101,7 @@ iptables -t mangle -A PREROUTING -p icmp -j DROP
 
 # ? Allow ping means ICMP port is open (If you do not want ping replace ACCEPT with REJECT) ---
 #iptables -A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
-	
+
 # ? Drop fragments in all chains
 iptables -t mangle -A PREROUTING -f -j DROP
 
@@ -101,19 +111,11 @@ iptables -A INPUT -p tcp -m connlimit --connlimit-above 111 -j REJECT --reject-w
 # ? Limit new TCP connections per second per source IP
 iptables -A INPUT -p tcp -m conntrack --ctstate NEW -m limit --limit 60/s --limit-burst 40 -j ACCEPT
 iptables -A INPUT -p tcp -m conntrack --ctstate NEW -j DROP
-	
-# ? Limit RST packets 
+
+# ? Limit RST packets
 iptables -A INPUT -p tcp -m tcp --tcp-flags RST RST -m limit --limit 4/s --limit-burst 4 -j ACCEPT
 iptables -A INPUT -p tcp -m tcp --tcp-flags RST RST -j DROP
 
-# Real protection against Port Scanning via ipset and iptables
-ipset create WWWSAS_PORT_SCANNERS hash:ip family inet hashsize 32768 maxelem 65536 timeout 600
-ipset create WWWSAS_SCANNED_PORTS hash:ip,port family inet hashsize 32768 maxelem 65536 timeout 60
-iptables -A INPUT -m state --state INVALID -j DROP
-iptables -A INPUT -m state --state NEW -m set ! --match-set WWWSAS_SCANNED_PORTS src,dst -m hashlimit --hashlimit-above 1/hour --hashlimit-burst 5 --hashlimit-mode srcip --hashlimit-name portscan --hashlimit-htable-expire 10000 -j SET --add-set WWWSAS_PORT_SCANNERS src --exist
-iptables -A INPUT -m state --state NEW -m set --match-set WWWSAS_PORT_SCANNERS src -j DROP
-iptables -A INPUT -m state --state NEW -j SET --add-set WWWSAS_SCANNED_PORTS src,dst
-		
 # Define the default policies
 iptables -P INPUT DROP
 iptables -P FORWARD DROP
