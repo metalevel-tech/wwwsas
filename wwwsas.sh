@@ -397,10 +397,10 @@ then
     if   [[ " ${AbuseIPDB_MODSEC_AGGRESSIVE_MODE_RULES[*]} " == *" ${MODSEC_RULE_ID} "* ]] && [[ $AGENT == "$AGENT_MODSEC" ]]
     then
 
-            if   [[ $MODSEC_RULE_ID == '150' ]]
+            if   [[ $MODSEC_RULE_ID == '1150' ]]
             then
                 AbuseIPDB_REPORT="$(echo -n "Aggressive mode (RuleId $MODSEC_RULE_ID): "; eval "$WWW_SAS_ABUSEIPDB_EXEC" "$IP" 'push-ip-data-html' "'21'" "'Detected by ${AGENT_MODSEC}. Request URI: ${REQUEST_URI}'")"
-            elif [[ $MODSEC_RULE_ID == '160' ]]
+            elif [[ $MODSEC_RULE_ID == '1160' ]]
             then
                 AbuseIPDB_REPORT="$(echo -n "Aggressive mode (RuleId $MODSEC_RULE_ID): "; eval "$WWW_SAS_ABUSEIPDB_EXEC" "$IP" 'push-ip-data-html' "'15'" "'Detected by ${AGENT_MODSEC}. Requests without a host header, Request URI: ${REQUEST_URI}'")"
             elif [[ $MODSEC_RULE_ID == '920350' ]]
