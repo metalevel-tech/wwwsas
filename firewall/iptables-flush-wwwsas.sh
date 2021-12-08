@@ -8,7 +8,7 @@ function log_and_flush() {
     /usr/sbin/iptables -S WWWSAS
 
     printf '\n\n%s\n> %s\n' "$(date)" "iptables -F WWWSAS"
-    echo /usr/sbin/iptables -F WWWSAS
+    /usr/sbin/iptables -F WWWSAS
 }
 
 log_and_flush >> /etc/wwwsas/tmp/iptables-flush.log
