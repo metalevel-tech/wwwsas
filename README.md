@@ -406,6 +406,7 @@ Note: on some VPSes there is a problem with the scripts placed in `/etc/network/
 ### References about Iptables Basic Configuration, Save and Restore
 
 * [**Iptables How To** on Help Ubuntu][9]
+* [How to secure ubuntu server from bruteforce ssh attacks?](https://askubuntu.com/a/32256/566421)
 * [**How To Set Up a Firewall Using Iptables on Ubuntu 14.04** on Digital Ocean][10]
 * [Why does a valid set of Iptables rules slow my server? on ServerFault][11]
 * [Iptables status slow? on FedoraForum][12]
