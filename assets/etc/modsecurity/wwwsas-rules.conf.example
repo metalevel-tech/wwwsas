@@ -23,8 +23,13 @@ SecServerSignature "Apache"
 
 
 # Whitelist some IP adresses
+#SecRule REMOTE_ADDR "@ipMatch 127.0.0.1,127.0.0.255" \
+#    "id:1000, phase:1, allow, \
+#     ctl:auditEngine=Off, \
+#     ctl:ruleEngine=Off"
+#
 SecRule REMOTE_ADDR "@ipMatch 127.0.0.1,127.0.0.255" \
-    "id:1000, phase:1, allow, \
+    "id:1000, phase:1, pass, nolog, \
      ctl:auditEngine=Off, \
      ctl:ruleEngine=Off"
 
