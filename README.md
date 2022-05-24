@@ -1,6 +1,6 @@
 # WWW Security Assistant
 
-This is a bundle of scripts that can helps you with malicious IP addresses handling within Apache2 and Ubuntu environment.
+This is a bundle of scripts that can helps you with malicious IP addresses handling within Apache2 and Ubuntu Server environment. It is much more like a how-to manual rather than an application.
 The core of the bundle was inspired by a [question](https://askubuntu.com/a/922144/566421) on AskUbuntu.com.
 
 The current project covers the following topics, that are involved into a complete mechanism. It is all about **How to increase Apache2 security within Ubuntu 20.04**.
@@ -29,39 +29,37 @@ The current project covers the following topics, that are involved into a comple
 22. [HTTPS and Common Apache Security Tips](#https-and-common-apache-security-tips)
 23. [Credits](#Credits)
 
-
-
 ## WWW Security Assistant > Iptables | Email
 
 Here is presented the script [**`wwwsas.sh`**][2]. It could help you with the handling of the malicious IP addresses. The script has two modes.
 
 ### Automatic mode
 
-When an external program, as Apache's `mod_security`, provides a malicious `$IP` address. In this case, the syntax that invokes the script, should be:
+This is the mode when an *external* program, as Apache's `mod_security`, provides a malicious `$IP` address to the script. In this case, the syntax that invokes the script, should be:
 
   ````bash
   wwwsas.sh "$IP" ModSecurity '$NOTES'
   wwwsas.sh "$IP" FloodDetector '$NOTES'
   wwwsas.sh "$IP" PostAnalyse 'Number of the additional attacks'
-  wwwsas.sh "$IP" ModEvasive # Semi depricated
-  wwwsas.sh "$IP" a2Analyst  # Semi depricated
-  wwwsas.sh "$IP" Guardian   # Semi depricated
+  wwwsas.sh "$IP" ModEvasive # Semi deprecated
+  wwwsas.sh "$IP" a2Analyst  # Semi deprecated
+  wwwsas.sh "$IP" Guardian   # Semi deprecated
   ````
 
-In this mode the script provides **two action stages** and for every action it will **send an email** to the administrator(s).
+In this mode the script has **two action stages**. Also for every action it will **send an email** to the administrator(s).
 
-* First stage: for the first few **'transgressions'** the source `$IP` will be **banned for a period of time** equal to the value of `$BAN_TIME`. This mode uses the command `at`.
+* First stage: for the first few **'transgressions'** the source `$IP` will be **banned for a period of time** equal to the value of `$BAN_TIME` in the configuration file. This mode uses the command `at` to remove the bans.
 
 * Second stage: when the number of the transgressions from certain `$IP` becomes equal to the value of `$LIMIT`, this `$IP` address will be **banned permanently** through Iptables and will be added to the `$WWW_SAS_BAN_LIST`.
 
 The script have a kind of integration with [`www.abuseipdb.com`](https://www.abuseipdb.com). Via the satellite script [`modules/abuseipdb-push-pull.sh`](#wwwsas-abuseipdb-integration--wwwsas--iptables), the main script can pull and push data from their API. 
 The necessary information about these actions will be provided within the emails sent by the main script. If you want to use this feature, you should register on [`www.abuseipdb.com`](https://www.abuseipdb.com) and provide your API key within the configuration file - variable `$AbuseIPDB_APIKEY`. For more information read the [relevant section](#wwwsas-abuseipdb-integration--wwwsas--iptables) below.
 
-Via the sattelite script [`is-crawler-ip.sh`](modules/is-crawler-ip.sh), the main script, `wwwsas.sh`, will test whether the provided `$IP` address is a *crawler* - if *true* (by default) the script will not block the `$IP` but will send email to the administrator.
+Via the satellite script [`is-crawler-ip.sh`](modules/is-crawler-ip.sh), the main script, `wwwsas.sh`, will test whether the provided `$IP` address is a *crawler* - if *true* (by default) the script will not block the `$IP` but will send email to the administrator.
 
-The script is able to send two kinds of emails depending on your preferences provided within the configuration file. It can send HTML formated emails and plain text emails - variables `$EMAIL_TO` and `$EMAIL_TO_PLAIN`. If none of these variables is set, the script execution will be discontinued (interrupted) before the email section.
+The script can send HTML formatted emails and plain text emails depending on your preferences provided within the configuration file - variables `$EMAIL_TO` and `$EMAIL_TO_PLAIN`. If none of these variables is set, the script execution will be discontinued (interrupted) before the email section.
 
-Here is how one HTML formated email looks like:
+Here is how one HTML formatted email looks like:
 
 ![Examples email sent by the script.](.images/email-demo.png)
 
@@ -69,7 +67,7 @@ Another cool feature is the embedded [Whitelist Rule Generator for ModSecurity](
 
 ### Manual mode
 
-This mode accept the following options:
+All of the `wwwsas` commands presented above could be used within the command line, but this so called *manual mode* handles few additional actions - it accepts the following options:
 
 * `wwwsas.sh <ip-address>` **`--DROP "log notes"`**
 
@@ -79,7 +77,7 @@ This mode accept the following options:
 
 * `wwwsas.sh <ip-address>` **`--CLEAR "log notes"`**
 
-    Creates an entry into the file `/etc/wwwsas/logs/clear-list.log`, remove the certain Iptables rule, removes the `$IP` from the history and from the `$WWW_SAS_BAN_LIST`:
+    Creates an entry into the file `/etc/wwwsas/logs/clear-list.log`, removes the relevant Iptables rules, removes the `$IP` from the history and from the `$WWW_SAS_BAN_LIST`:
 
       iptables -D WWWSAS -s $IP -j DROP
 
@@ -90,7 +88,6 @@ This mode accept the following options:
   * `/etc/modsecurity/wwwsas-rules.conf`,
   * `/etc/wwwsas/confs/modsec.ip.white-list.conf` and
   * `/etc/apache2/mods-available/evasive.conf`.
-
 
 * `wwwsas.sh <ip-address>` **`--ACCEPT-CHAIN "log notes"`** (this option is not recommended)
 
@@ -106,12 +103,13 @@ This mode accept the following options:
 
 ### Dependencies
 
-* All configuration variables are placed in the commonly used file `wwwsas.conf`.
+* All configuration variables are placed in the file `wwwsas.conf`. It is sourced in each script of the package.
 * The script uses [`iptables-save.sh`](firewall/iptables-save.sh) and the `iptables` chain `WWWSAS`, explained in the [next section](#iptables--basic-configuration--save-and-restore). It will create and maintain few files within the `$WORK_DIR`:
 
   * `logs/history.log` - contains the data for the previous IP addresses transgressions.
   * `tmp/wwwsas.mail` (`.plain`) - the content of the last email sent by the script.
-  * `logs/white-list.log`; `.black.list` and `.clear.list`. Also several other files will be created by the script and the other scripts included in the repository.
+  * `logs/{white-list,black-list,clear-list,history}.log`.
+  * And several other files will be created .
 
 * The script needs a minimal configuration to send emails:
 
@@ -147,7 +145,7 @@ cd /etc
 sudo git clone https://github.com/metalevel-tech/wwwsas.git
 ````
 
-You can choose another name of the script's directory and another location, because during the setup process, the `SETUP` script will parse the current location and will apply the necessary changes:
+You can choose another name and location for the script's home directory - within the setup process, the `SETUP` script will parse the current location and will apply the necessary changes:
 
 ````bash
 sudo git clone https://github.com/metalevel-tech/wwwsas.git /etc/wwwsas
@@ -161,7 +159,7 @@ Go inside the directory where you have cloned the repository and execute the `SE
 sudo ./SETUP
 ````
 
-In addition the `SETUP` could handle two parameter:
+The `SETUP` could handle two parameter:
 
 ````bash
 sudo ./SETUP [branch] [no-ipset]
@@ -169,24 +167,24 @@ sudo ./SETUP [branch] [no-ipset]
 
 * `$1` - `branch` of `https://github.com/metalevel-tech/wwwsas` (default: master).
 
-* `$2` - when the second positional parameter is set to `no-ipset` with this option the ipset setup from the last step will be disabled - for kernel < 2.6 (default: unset).
+* `$2` - when it is set to `no-ipset` the *ipset setup* from the last step of the installation process will be ignored - for kernel < 2.6 (default: unset).
 
 The `SETUP` will interactively guide you through the steps, described below, and will write a log file - `SETUP.log`, where you could obtain useful information later. For example ***if you want to remove*** WWW Security Assistant from your system, just read the log file and remove the deployed files.
 
-* Initially the script will check the first level dependencies. Most of them should be installed with Ubuntu Server by default, probably only `colordiff` nad `jq` could be a missing dependency.
+* Initially the script will check the first level dependencies. Most of them should be installed with Ubuntu Server by default, probably only `colordiff`, `jq` and `at` could be a missing dependency.
 
-1. At this step the setup will ask you to **Confirm the installation (update) policies**, this is a reminder of that the repository will be pulled again (let's imagine this is update) and all of our changes made on the files, that are not listed in the `.gitignore` file, will be terminated. If you have done such changes, please, make a copy of the relevant files with a `.local` extension and they will be kept. After you are agree the repository will be pulled and the setup will proceed.
+1. At this step the setup will ask you to **Confirm the installation (update) policies**, this is a reminder of that the repository will be pulled again (let's imagine this is an update) and all of the changes made within  files, that are not listed in the `.gitignore` file, will be lost. If you have done such changes, make a copy of the relevant files with a `.local` extension and they will be kept. After you are agree with that policy, the repository will be pulled and the setup will proceed.
 
-2. At this point the setup will **Check of the installer version** and if the newly pulled `SETUP` file has different version the process will be interrupted and you must start it again.
+2. Step two - **Check of the installer version** - if the newly pulled `SETUP` file has different version the process will be gracefully interrupted and you must start it again.
 
-3. **Environment setup** - at this stage the setup script will try to parse the main configuration file `wwwsas.conf` and if it exists the setup will conclude this is an update and will use the existing configuration file. If `wwwsas.conf` doesn't exist you will be asked about few basic preferences, also you will be informed about the files that will be changed.
+3. **Environment setup** - at this stage the setup script will try to parse the main configuration file `wwwsas.conf` - if it exists the setup will conclude this is an update and will use it. If `wwwsas.conf` doesn't exist you will be asked about few basic preferences, also you will be informed about the files that will be changed.
 
-4. The next step is **Setup (Update)** of the **WWW Security Assistant Configuration**. Here the installation script will create local `.conf` files, based on the `.example` files. You will be informed about each file creation and will be asked to edit it.
+4. The next step is **Setup/Update** of the **WWW Security Assistant Configuration**. Here the installation script will create local `.conf` files, based on the `.example` files, provided by the repo. You will be informed about each created file.
 
    * Such `.conf` files will be created in the directories `/etc/wwwsas` and `/etc/wwwsas/conf`.
-   * Edit at least **`wwwsas.conf`** and tweak the first priority section - change the value of the variable `$EMAIL_TO`, etc.
+   * Edit at least **`wwwsas.conf`** and tweak the *first priority section* - change the value of the variable `$EMAIL_TO`, etc.
 
-5. **Create shell commands**. The setup script will make symbolic links for few of our scripts to `/usr/local/bin` thus they be accessible as shell commands. Within the emails that will be sent by the main script, you will receive instructions how to use most of these commands. The created commands are:
+5. **Create shell commands**. The setup script will create symbolic links, for few of our scripts, into `/usr/local/bin` - thus they will be accessible as shell commands. Within the emails that will be sent by the main script `wwwsas.sh`, you will receive instructions how to use some of these commands. The created *commands* are:
 
    * `wwwsas` that is a symbolic link to [`wwwsas.sh`](wwwsas.sh),
    * `wwwsas-flood-detector` that is a symbolic link to [`modules/flood-detector.sh`](modules/flood-detector.sh),
@@ -201,29 +199,29 @@ The `SETUP` will interactively guide you through the steps, described below, and
    * `wwwsas-ipset-save` that is a symbolic link to [`firewall/ipset-save.sh`](firewall/ipset-save.sh),
    * `wwwsas-ipset-restore` that is a symbolic link to [`firewall/ipset-restore.sh`](firewall/ipset-restore.sh).
 
-6. She script will **Create few empty \*.log, \*.list and \*.history files**. We need this step because, later, we must grant the necessary write permissions to the Apache's user *www-data*.
+6. The setup script will **Create few empty \*.log, \*.list and \*.history files**. We need this step because, later, we must grant the necessary write permissions to the Apache's user *www-data*.
 
 7. **Setup [wwwsas-crontab](assets/etc/cron.d/wwwsas-crontab.example).**
 
-   Please review this file carefully! 
-   
+   *Please review this file carefully!*
+
    The `@reboot` *cronjobs* will restore the `iptables` configuration and this may be dangerous if something is not correct.
 
-   The *cronjob* for `flood-detector.sh` will be executed on each minute (see the relevant section about this script below). You can skip this step, but `flood-detector.sh` doesn't consume much server resources and, you will see, time-to-time it does nice work.
+   The *cronjob* for `flood-detector.sh` will be executed on each minute (see the relevant section about this script below). You can skip this step, but `flood-detector.sh` doesn't consume much resources and, you will see, time-to-time it does nice work.
 
-   The *cronjob* for `modules/post-analyse.sh` will be executed on each hour.
+   The *cronjob* for `modules/post-analyse.sh` will be executed on each hour, but this period could be decreased.
 
-8. **Install the necessary Apache2 modules**. If this is an update this step will be skipped. Otherwise to install and enable the Apache's modules `headers`, `rewrite`, `expires`, <s>`evasive`</s>, `security2`. Actually we need the module `security2`, thath will call our script `wwwsas.sh` from the Apache's environment. The other are dependencies.
+8. **Install the necessary Apache2 modules**. If this is an update this step will be skipped. Otherwise the Apache's modules `headers`, `rewrite`, `expires`, <s>`evasive`</s>, `security2` will be installed. Actually we need the module `security2`, that will call our script `wwwsas.sh` conditionally from the Apache's environment. The other are dependencies.
 
-   The module `evasive` will be installed and configured but will be **disabled**, because `modSecurity2` covers its functionality in a better way by the CRS (see the next section) rules `900700` and `900260`. Here is an explanation: [Apache2 mod_evasive vs mod_security with OWASP crs when protecting against DDOS?](https://stackoverflow.com/a/66196947/6543935)
+   The module `evasive` will be installed and configured but will be **disabled**, because `modSecurity2` covers its functionality in a better way by the CRS rules `900700` and `900260` - see the next section. Here is an explanation: [Apache2 mod_evasive vs mod_security with OWASP crs when protecting against DDOS?](https://stackoverflow.com/a/66196947/6543935)
 
-   The reposittory `modsecurity-crs` will be installed as dependency of `modSecurity2`, but we will install a newer version later, so this package will be removed.
+   The repository `modsecurity-crs` will be installed as dependency of `modSecurity2`, but we will install a newer version later, so this package will be removed by the setup script.
 
-9. **Install ModSecurity Core Rule Set 3.x, GeoLite2**. The `SETUP` script will clone the latest stable version of ModSecurity CoreRuleSet, in the directory defined in Step 3 - currently this is [`v3.3/master`][32]. If this is an update this step will be skipped.
+9. **Install ModSecurity Core Rule Set 3.x, GeoLite2**. The `SETUP` script will clone the latest stable version of ModSecurity CoreRuleSet in the directory defined in Step 3 (above) - currently this is version [`v3.3/master`][32]. If this is an update this step will be skipped.
 
-10. **Setup Apache**. The setup will try to (re)create the default Apache's log directory (just in case). Next the setup will change the ownership of the file `execution.log` to `www-data`, thus it will be able to write execution logs. Then it will ask to:
+10. **Setup Apache**. The setup will try to (re)create the default Apache's log directory (just in case). Next the setup will change the ownership of the file `wwwsas/tmp/execution.log` to `www-data`, thus it will be able to write execution logs. Then the setup script will ask to:
 
-    * Create a file within `/etc/sudoers.d/` with purpose to allow to `www-data` to execute our script 'wwwsas.sh' by `sudo` without password. This is a little bit dangerous step, so you will be asked to open and save this new file by the command [`visudo`][8] to confirm there is not a problem!
+    * Create a file within `/etc/sudoers.d/` with purpose to allow to `www-data` to execute our script `wwwsas.sh` by `sudo` without password. This is a little bit dangerous step, so you will be asked to open and save this new file by the command [`visudo`][8] to confirm there is not a problem!
 
     * <s>Create or update preset basic templates for (1) `apache2.conf` (note: first will be created `apache2.conf.template` and then it will be compared with your existing `.conf` file), (2) `sites-available/wordpress.conf.template` and (3) `sites-available/mediawiki.conf.template`. If you want, you could use them within your configuration further.</s>
 
@@ -231,20 +229,20 @@ The `SETUP` will interactively guide you through the steps, described below, and
 
 12. **Setup ModSecurity**. The setup will (re)create the ModSecurity's log directory, chosen before.
 
-    If this is a new installation, the setup will create default `.conf` files from the examples, that comes with the relevant installation packages. These files are:
+    If this is a new installation, the setup will create default `.conf` files from the examples that comes with the relevant installation packages. These files are:
 
     * `/etc/modsecurity/modsecurity.conf`
     * `/etc/modsecurity/coreruleset/crs-setup.conf`
     * `/etc/modsecurity/coreruleset/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf`
     * `/etc/modsecurity/coreruleset/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf`
 
-    After that these files will be compared with the `.example` files that comes with our repository (`www-security-assistant`) under the directory `assets/`. If this is an update only this step will be performed.
+    After that these files will be compared with the `.example` files that comes with our repository (`wwwsas`) under the directory `assets/`. If this is an update only this step will be performed.
 
-    Here you must replace the existing `.conf` files with the new ones that involve our main script to ModSecurity's setup. Or you must edit these files in a appropriate way. The installation script will update also the file `apache2/mods-available/security.2.conf` that involves the above configuration files within the Apache's configuration.
+    Here you must replace the existing `.conf` files with the new ones that involve our main script to ModSecurity's setup. Or you must edit these files in a appropriate way. The installation script will update also the file `apache2/mods-available/security2.conf` that includes the above configuration files within the Apache's configuration.
 
-    Further the installer will setup `logrotate` entry for the ModSecurity logs and also `crontab` for the GeoIP DB update script ow OWASP ModSec CRS. Finally the file `assets/www/wwwsas.issues.ph` will be created (it is local and you can edit it as you wish), and it will be sym-linked to each first level sub directory in `/var/www` where ModSecurity will redirect the bad guys.
+    Further the installer will setup `logrotate` entry for the ModSecurity logs and also `crontab` for the GeoIP DB update script used by ModSecurity CRS rules. Finally the file `assets/www/wwwsas.issues.php` will be created (it is local and you can edit it as you wish). This file will be sym-linked to each first level sub directory in `/var/www` where ModSecurity will redirect the bad guys.
 
-13. **Iptables minimal configuration**. At this stage the rules listed below will be applied. For one step further advanced configuration you can check and apply the file `iptables.basic-setup.local`.
+13. **Iptables minimal configuration**. At this stage the rules listed below will be applied.
 
     ````bash
     iptables -N WWWSAS              # Create the chain where wwwsas.sh will push rhe bad gays
@@ -253,7 +251,9 @@ The `SETUP` will interactively guide you through the steps, described below, and
     iptables -I INPUT 2 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT    # Allow 3 way handshake
     ````
 
-14. [**`[DEPRECATED SETUP] CHEK [WWWSAS.CRONTAB]`**](assets/etc/cron.d/wwwsas-crontab.example) <s>**Setup Iptables SAVE and RESTORE at REBOOT**. At this step the setup script will create the following symbolic links, thus the process of save and restore of the Iptables configuration at reboot will be automated.
+    *For more advanced configuration you can carefully check and apply the file `iptables.basic-setup.local`.*
+
+14. [**`[DEPRECATED SETUP] CHECK [WWWSAS.CRONTAB]`**](assets/etc/cron.d/wwwsas-crontab.example) <s>**Setup Iptables SAVE and RESTORE at REBOOT**. At this step the setup script will create the following symbolic links, thus the process of save and restore of the Iptables configuration at reboot will be automated.
 
     ````bash
     ln -s '/etc/wwwsas/firewall/iptables-save.sh' '/etc/network/if-post-down.d/iptables-save'
@@ -261,26 +261,24 @@ The `SETUP` will interactively guide you through the steps, described below, and
     ````
     </s>
 
-    The scripts `iptables-save.sh` and `iptables-restore.sh` uses the file `confs/iptables.current-state.conf` to keep and read the latest state of the Iptables configuration. 
-    
+    The scripts `iptables-save.sh` and `iptables-restore.sh` uses the file `confs/iptables.current-state.conf` to keep and read the latest state of the Iptables configuration.
+
     Also the main script `wwwsas.sh` calls `iptables-save.sh` each time when a new rule is issued.
 
-15. [**`[DEPRECATED SETUP] CHEK [WWWSAS.CRONTAB]`**](assets/etc/cron.d/wwwsas-crontab.example) <s>**Setup Ipset SAVE and RESTORE at REBOOT**. This step is similar as the above - it will not be processed, if you have run the `SETUP` script with the [`no-ipset`](https://github.com/metalevel-tech/wwwsas#step-2--setup-www-security-assistant) option enabled. Currently the tool `ipset` is used within the script `iptables.basic-setup.local` to be created a [real port scanning protection](https://unix.stackexchange.com/a/407904/201297).</s>
+15. [**`[DEPRECATED SETUP] CHECK [WWWSAS.CRONTAB]`**](assets/etc/cron.d/wwwsas-crontab.example) <s>**Setup Ipset SAVE and RESTORE at REBOOT**. This step is similar as the above - it will not be processed, if you have run the `SETUP` script with the [`no-ipset`](https://github.com/metalevel-tech/wwwsas#step-2--setup-www-security-assistant) option enabled. Currently the tool `ipset` is used within the script `iptables.basic-setup.local` to be created a [real port scanning protection](https://unix.stackexchange.com/a/407904/201297).</s>
 
 ### Step 3 :: Post setup configuration
 
 Once the `SETUP` is finish, you have to do few more things.
 
-1. Edit the file [`wwwsas.conf`](wwwsas.conf.example), review the assigned valuest and provide values for the following variables:
+1. Edit the file [`wwwsas.conf`](wwwsas.conf.example), review the assigned values, and provide values for the following variables:
 
    * `AbuseIPDB_APIKEY=` Your API v2 key obtained at [`www.abuseipdb.com`](https://www.abuseipdb.com)
    * `MaxMindGeoLite2_LICENSE_KEY=` Your license key obtained at [dev.maxmind.com](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data)
    * `AbuseIPDB_MODSEC_AGGRESSIVE_MODE_RULES=`
    * `AbuseIPDB_FLOODT_AGGRESSIVE_MODE=`
 
-2. `[These edits will be automatically done by the next step.]` <s>Edit the file `confs/modsec.ip.white-list.conf` and along with the loopback interface (`127.0.0.1`) add your server's IP(s) address. Whitelist the servers IP address also within rule `id:100` in the file `/etc/modsecurity/wwwsas-rules.conf` (sometimes there is a problem when the IPs are read fom file, so this is most important place). The IPs added here will be whitelisted for ModSecurity, but not for the entire security system. Edit and `/etc/apache2/mods-available/evasive.conf` and whitelist the same IP(s).</s> 
-
-3. Execute the commands `sudo wwwsas <your-server-ip> --ACCEPT "My server's public IP"` and `sudo wwwsas <another-ip> --ACCEPT 'My home network public IP'`. These commads will add whitelist entries for the provided IPs into the files:
+2. Execute the commands `sudo wwwsas <your-server-ip> --ACCEPT "My server's public IP"` and `sudo wwwsas <another-ip> --ACCEPT 'My home network public IP'`. These commands will add whitelist entries for the provided IPs into the files:
 
    * `/etc/wwwsas/logs/white-list.log`
    * `/etc/modsecurity/wwwsas-rules.conf`
@@ -289,9 +287,9 @@ Once the `SETUP` is finish, you have to do few more things.
 
    Thus, for example, the ModSecurity's disruptive rules sometimes will block your access, but `wwwsas.sh` will send you only emails with instructions how to whitelist similar actions, without issue DROP rules to Iptables...
 
-4. Read the `SETUP.log` file (if you think you've miss something) and **restart Apache2**.
+3. Read the `SETUP.log` file (if you think you've miss something) and **restart Apache2**.
 
-5. Read the next section - *Iptables – Basic Configuration* - and [engage Iptables to work for you](#further-reading).
+. Read the next section - *Iptables – Basic Configuration* - and [engage Iptables to work for you](#further-reading).
 
 ### Test the Installation
 
@@ -406,7 +404,7 @@ Note: on some VPSes there is a problem with the scripts placed in `/etc/network/
 ### References about Iptables Basic Configuration, Save and Restore
 
 * [**Iptables How To** on Help Ubuntu][9]
-* [How to secure ubuntu server from bruteforce ssh attacks?](https://askubuntu.com/a/32256/566421)
+* [How to secure ubuntu server from brute-force ssh attacks?](https://askubuntu.com/a/32256/566421)
 * [**How To Set Up a Firewall Using Iptables on Ubuntu 14.04** on Digital Ocean][10]
 * [Why does a valid set of Iptables rules slow my server? on ServerFault][11]
 * [Iptables status slow? on FedoraForum][12]
@@ -526,7 +524,6 @@ To test this configuration we can simulate DDOS attack via the `F5` method, ment
 * Within the folder `assets/etc/apache2/mods-available` is included a pre-configured file `evasive.conf`, it will be deployed by the [`SETUP`](#step-2--setup-www-security-assistant-script-bundle).
 * The log directory and the mentioned log file also will be created during the setup process.
 * **The module `evasive` will be installed and configured but will be **disabled**, because `modSecurity2` covers its functionality in a better way by the CRS (see the next section) rules [`900700` and `900260`](assets/etc/modsecurity/coreruleset/crs-setup.conf.example). Here is an explanation: [Apache2 mod_evasive vs mod_security with OWASP crs when protecting against DDOS?](https://stackoverflow.com/a/66196947/6543935)**
-
 
 ## ModSecurity 2.9 for Apache2
 
